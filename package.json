@@ -1,17 +1,20 @@
 {
-  "name": "spec-workflow-mcp",
+  "name": "spec-cli",
   "version": "1.0.8",
   "description": "MCP server for managing spec workflow (requirements, design, implementation)",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "spec-workflow-mcp": "dist/index.js"
+    "spec-cli": "dist/index.js"
   },
   "files": [
     "dist/**/*",
     "api/**/*"
   ],
   "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "build": "tsc && chmod 755 dist/index.js && ./scripts/sync-package.sh",
     "dev": "tsx src/index.ts",
     "start": "node dist/index.js",
@@ -51,8 +54,10 @@
     "@types/node": "^22.10.5",
     "@typescript-eslint/eslint-plugin": "^8.20.0",
     "@typescript-eslint/parser": "^8.20.0",
+    "@vitest/coverage-v8": "^4.1.2",
     "eslint": "^9.17.0",
     "tsx": "^4.19.2",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "vitest": "^4.1.2"
   }
 }

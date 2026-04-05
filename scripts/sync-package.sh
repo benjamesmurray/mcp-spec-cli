@@ -18,13 +18,13 @@ echo "📄 Generating package.json..."
 MAIN_VERSION=$(node -p "require('./package.json').version")
 cat > package/package.json << EOF
 {
-  "name": "spec-workflow-mcp",
+  "name": "spec-cli",
   "version": "$MAIN_VERSION",
   "description": "MCP server for managing spec workflow (requirements, design, implementation)",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "spec-workflow-mcp": "dist/index.js"
+    "spec-cli": "dist/index.js"
   },
   "files": [
     "dist/**/*",
@@ -79,7 +79,7 @@ A Model Context Protocol (MCP) server for managing specification workflows inclu
 ## Installation
 
 ```bash
-npm install -g spec-workflow-mcp
+npm install -g spec-cli
 ```
 
 ## Usage
@@ -92,7 +92,7 @@ Add to your MCP client configuration:
 {
   "mcpServers": {
     "specs-workflow": {
-      "command": "spec-workflow-mcp"
+      "command": "spec-cli"
     }
   }
 }

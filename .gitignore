@@ -77,3 +77,7 @@ push-to-github.sh
 *-token.sh
 *.token
 .clinerules
+
+# Local secrets
+.env
+mcp.json

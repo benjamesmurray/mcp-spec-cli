@@ -7,7 +7,7 @@
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { specWorkflowTool } from './tools/specWorkflowTool.js';
+import { registerSpecTools } from './tools/specTools.js';
 import { openApiLoader } from './features/shared/openApiLoader.js';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
@@ -21,12 +21,12 @@ const packageJson = JSON.parse(
 
 // Create server instance
 const server = new McpServer({
-  name: 'specs-workflow-mcp',
+  name: 'spec-cli',
   version: packageJson.version
 });
 
 // Register tools
-specWorkflowTool.register(server);
+registerSpecTools(server);
 
 // Start server
 async function main(): Promise<void> {

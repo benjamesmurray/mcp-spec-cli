@@ -5,9 +5,10 @@
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { parseTasksFromContent, getFirstUncompletedTask, formatTaskForFullDisplay, Task } from '../shared/taskParser.js';
-import { responseBuilder } from '../shared/responseBuilder.js';
-import { WorkflowResult } from '../shared/mcpTypes.js';
-import { BatchCompleteTaskResponse } from '../shared/openApiTypes.js';
+export interface WorkflowResult {
+  displayText: string;
+  data?: any;
+}
 import { TaskGuidanceExtractor } from '../shared/taskGuidanceTemplate.js';
 
 export interface CompleteTaskOptions {
@@ -23,7 +24,7 @@ export async function completeTask(options: CompleteTaskOptions): Promise<Workfl
 
   if (!existsSync(path)) {
     return {
-      displayText: responseBuilder.buildErrorResponse('invalidPath', { path }),
+      displayText: '❌ Error: Directory does not exist',
       data: {
         success: false,
         error: 'Directory does not exist'
@@ -54,7 +55,7 @@ export async function completeTask(options: CompleteTaskOptions): Promise<Workfl
 /**
  * Complete multiple tasks in batch
  */
-async function completeBatchTasks(tasksPath: string, taskNumbers: string[]): Promise<BatchCompleteTaskResponse> {
+async function completeBatchTasks(tasksPath: string, taskNumbers: string[]): Promise<any> {
   // Read tasks file
   const originalContent = readFileSync(tasksPath, 'utf-8');
   const tasks = parseTasksFromContent(originalContent);
