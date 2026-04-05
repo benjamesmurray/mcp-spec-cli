@@ -81,7 +81,7 @@ describe('SpecManager', () => {
       expect(summary).toContain('**Requirements:** ❌ Missing');
       expect(summary).toContain('**Design:** ❌ Missing');
       expect(summary).toContain('**Tasks:** ❌ Missing');
-      expect(summary).toContain('Run `spec_plan` to finalize requirements.');
+      expect(summary).toContain('Run `spec_plan` to finalize specifications/requirements.');
     });
 
     it('should return pending edits if document contains <template-*> tags', () => {
@@ -94,7 +94,7 @@ describe('SpecManager', () => {
       
       const summary = SpecManager.getStatusSummary(tempDir, featureName);
       expect(summary).toContain('**Requirements:** ⏳ Pending Edits');
-      expect(summary).toContain('Run `spec_plan` to finalize requirements.');
+      expect(summary).toContain('Run `spec_plan` to finalize specifications/requirements.');
     });
 
     it('should return approved if document exists and has no <template-*> tags', () => {
@@ -108,7 +108,7 @@ describe('SpecManager', () => {
       const summary = SpecManager.getStatusSummary(tempDir, featureName);
       expect(summary).toContain('**Requirements:** ✅ Approved');
       expect(summary).toContain('**Design:** ❌ Missing');
-      expect(summary).toContain('Run `spec_plan` to finalize design.');
+      expect(summary).toContain('Success: Specifications created. Next Step: Run `spec_plan` to create an implementation plan (design).');
     });
     
     it('should handle full workflow completion state', () => {
@@ -125,7 +125,7 @@ describe('SpecManager', () => {
       expect(summary).toContain('**Requirements:** ✅ Approved');
       expect(summary).toContain('**Design:** ✅ Approved');
       expect(summary).toContain('**Tasks:** ✅ Active');
-      expect(summary).toContain('Run `spec_todo list` or `spec_todo start <id>`.');
+      expect(summary).toContain('Run `spec_todo list` or `spec_todo start <id>` to begin implementation.');
     });
   });
 });

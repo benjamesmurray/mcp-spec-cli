@@ -40,7 +40,7 @@ describe('Spec CLI Workflow Integration', () => {
     // 1. Initialize
     const initRes = await tools['spec_init'].callback({ name: featureName, description: 'Add payments' }, {});
     expect(initRes.content[0].text).toContain('**Requirements:** ⏳ Pending Edits');
-    expect(initRes.content[0].text).toContain('Run `spec_plan` to finalize requirements.');
+    expect(initRes.content[0].text).toContain('Run `spec_plan` to finalize specifications/requirements.');
     
     // 2. spec_plan (with requirements not finished)
     const planRes1 = await tools['spec_plan'].callback({ instruction: 'Use Stripe' }, {});
@@ -72,7 +72,7 @@ describe('Spec CLI Workflow Integration', () => {
     // 8. spec_status (everything ready)
     const statusRes = await tools['spec_status'].callback({}, {});
     expect(statusRes.content[0].text).toContain('**Tasks:** ✅ Active');
-    expect(statusRes.content[0].text).toContain('Run `spec_todo list` or `spec_todo start <id>`.');
+    expect(statusRes.content[0].text).toContain('Run `spec_todo list` or `spec_todo start <id>` to begin implementation.');
 
     // 9. spec_todo (Complete a task)
     const todoRes = await tools['spec_todo'].callback({ action: 'complete', id: '1.1' }, {});

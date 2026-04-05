@@ -90,13 +90,13 @@ export class SpecManager {
 
       let nextSteps = '';
       if (!state.requirements.exists || !state.requirements.edited) {
-         nextSteps = 'Run `spec_plan` to finalize requirements.';
+         nextSteps = 'Run `spec_plan` to finalize specifications/requirements.';
       } else if (!state.design.exists || !state.design.edited) {
-         nextSteps = 'Run `spec_plan` to finalize design.';
+         nextSteps = 'Success: Specifications created. Next Step: Run `spec_plan` to create an implementation plan (design).';
       } else if (!state.tasks.exists || !state.tasks.edited) {
-         nextSteps = 'Run `spec_plan` to scaffold tasks.';
+         nextSteps = 'Success: Implementation plan created. Next Step: Run `spec_plan` to scaffold tasks.';
       } else {
-         nextSteps = 'Run `spec_todo list` or `spec_todo start <id>`.';
+         nextSteps = 'Success: Tasks scaffolded. Next Step: Run `spec_todo list` or `spec_todo start <id>` to begin implementation.';
       }
 
       return `**Feature:** ${featurePath.replace(baseDir, '')}

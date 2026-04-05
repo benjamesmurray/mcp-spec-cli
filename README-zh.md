@@ -14,8 +14,8 @@
 
 *   **状态感知与自动驾驶：** 工具确切知道项目当前所处的阶段。AI 不需要自行跟踪目前是在进行“需求分析”还是“架构设计”——只需调用 `spec_plan`，工具会自动处理状态切换。
 *   **模糊路径解析：** AI 不需要费力寻找项目文件夹位置。只需输入 `spec_plan`，工具就会通过最近活动的功能记录 (`.spec_last_used`) 即时定位上下文。
+*   **"GPS" 导航系统：** 在每次工具调用结束时，`spec-cli` 会输出明确的“下一步”指令。例如，如果需求分析已完成，工具会输出：*"Success: Specifications created. Next Step: Run `spec_plan` to create an implementation plan (design)."* 这种机制让工具变成了自动导航的 GPS，极大地减少了对冗长系统提示词的依赖。
 *   **高密度 Markdown 上下文 (TOON)：** `spec-cli` 不再返回庞大的 JSON 对象，而是返回紧凑、具备操作指导意义的 Markdown 摘要，直接告诉 AI 下一步该做什么。
-*   **Cobra 风格的单动词指令：** 仅用四个简单的命令即可覆盖整个项目生命周期。
 
 ## 4 个语义化核心工具
 
@@ -26,15 +26,53 @@
 | `spec_todo` | 管理任务列表及进度。 | `{"action": "start", "id": "1.1"}` |
 | `spec_status` | 返回健康检查状态及后续步骤建议。 | `{}` |
 
-### "Zero-Shot" 零样本提示词
-由于 `spec-cli` 会在整个工作流中主动“辅导” AI，您只需使用以下极简系统提示词即可：
+## 安装与配置指南
 
-> "你可以使用 `spec` 工作流工具。请调用 `spec_status` 来查看当前进度，并遵循工具输出中的 'Next Steps' (后续步骤) 建议进行操作。"
+### Gemini CLI
+在全局 `~/.gemini/settings.json` 或项目本地 `.gemini/settings.json` 中配置 `spec-cli`：
 
-## 安装指南
+```json
+{
+  "mcpServers": {
+    "spec-cli": {
+      "command": "npx",
+      "args": ["-y", "spec-cli@latest"]
+    }
+  }
+}
+```
+
+**上下文引导指令 (`GEMINI.md`)：**
+为了确保上下文效率，请将以下内容添加到您项目的 `GEMINI.md` 中：
+> "You have access to the `spec-cli` MCP server. Always use `spec_status` to orient yourself before beginning work on a feature. Rely on the `> Next Steps:` output from the tool to guide your workflow transitions autonomously. Keep manual tool usage queries to a minimum."
+
+### Continue.dev
+将服务器添加到您的 `~/.continue/config.json` (或 `.continue/mcpServers/tools.json`)：
+
+```json
+{
+  "mcpServers": [
+    {
+      "name": "spec-cli",
+      "command": "npx",
+      "args": ["-y", "spec-cli@latest"]
+    }
+  ]
+}
+```
+
+**规则配置 (`.continue/rules/spec-workflow.prompt`)：**
+为了将其无缝集成到您的 Continue.dev 工作流中，请创建一个规则文件：
+```markdown
+---
+name: Spec Workflow
+description: Always use spec-cli to scaffold and plan new features
+---
+When asked to build a new feature, do not guess the architecture immediately. Instead, use the `spec_init` tool to scaffold the feature. Read the "Next Steps" provided by the tool's output to navigate the Requirements -> Design -> Implementation workflow autonomously.
+```
 
 ### Cursor / VS Code (Claude Desktop)
-将以下配置添加到您的 `mcp.json` 或 `claude_desktop_config.json` 文件中：
+将以下配置添加到您的 `claude_desktop_config.json` 或 Cursor Settings 中：
 
 ```json
 {
@@ -53,8 +91,8 @@
 2.  **计划 (Plan):** AI 执行 `spec_plan {"instruction": "确保支持 Stripe"}`。工具检测到 `requirements.md` 已完善，于是自动确认该阶段并生成 `design.md`，同时将关于 Stripe 的指令直接嵌入到设计文档中。
 3.  **实施 (Implement):** AI 执行 `spec_status` 后看到如下状态：
     `✅ Requirements: Approved | ✅ Design: Approved | ⏳ Tasks: Pending Edits`
-    `> Next Steps: Run spec_todo list or spec_todo start <id>.`
-4.  **执行 (Execute):** AI 执行 `spec_todo {"action": "complete", "id": "1.1"}` 并开始修改实际源代码。
+    `> Success: Implementation plan created. Next Step: Run spec_plan to scaffold tasks.`
+4.  **执行 (Execute):** AI 完成计划后执行 `spec_todo {"action": "complete", "id": "1.1"}`，并开始修改实际源代码。
 
 ## 开发
 
@@ -67,6 +105,9 @@ npm run build
 
 # 本地启动 MCP 服务器
 npm run start
+
+# 运行测试
+npm run test
 ```
 
 ## 许可证
