@@ -84,27 +84,36 @@ export class SpecManager {
       const featurePath = this.resolveFeaturePath(baseDir, featureName);
       const state = this.getWorkflowState(featurePath);
 
-      let reqStatus = state.requirements.exists ? (state.requirements.edited ? '✅ Approved' : '⏳ Pending Edits') : '❌ Missing';
-      let desStatus = state.design.exists ? (state.design.edited ? '✅ Approved' : '⏳ Pending Edits') : '❌ Missing';
-      let tskStatus = state.tasks.exists ? (state.tasks.edited ? '✅ Active' : '⏳ Pending Edits') : '❌ Missing';
+      let reqStatus = state.requirements.exists ? (state.requirements.edited ? 'Approved' : 'Pending Edits') : 'Missing';
+      let desStatus = state.design.exists ? (state.design.edited ? 'Approved' : 'Pending Edits') : 'Missing';
+      let tskStatus = state.tasks.exists ? (state.tasks.edited ? 'Active' : 'Pending Edits') : 'Missing';
 
       let nextSteps = '';
+      let phase = 'Specify';
       if (!state.requirements.exists || !state.requirements.edited) {
-         nextSteps = 'Run `spec_plan` to finalize specifications/requirements.';
+         phase = 'Requirements';
+         nextSteps = 'Run `sc_exec plan` to finalize specifications/requirements.';
       } else if (!state.design.exists || !state.design.edited) {
-         nextSteps = 'Success: Specifications created. Next Step: Run `spec_plan` to create an implementation plan (design).';
+         phase = 'Design';
+         nextSteps = 'Run `sc_exec plan` to create an implementation plan (design).';
       } else if (!state.tasks.exists || !state.tasks.edited) {
-         nextSteps = 'Success: Implementation plan created. Next Step: Run `spec_plan` to scaffold tasks.';
+         phase = 'Planning';
+         nextSteps = 'Run `sc_exec plan` to scaffold tasks.';
       } else {
-         nextSteps = 'Success: Tasks scaffolded. Next Step: Run `spec_todo list` or `spec_todo start <id>` to begin implementation.';
+         phase = 'Implementation';
+         nextSteps = 'Run `sc_exec todo list` or `sc_exec todo start <id>` to begin implementation.';
       }
 
-      return `**Feature:** ${featurePath.replace(baseDir, '')}
-**Requirements:** ${reqStatus} | **Design:** ${desStatus} | **Tasks:** ${tskStatus}
-
-> **Next Steps:** ${nextSteps}`;
+      return `Project: spec-cli | Phase: ${phase}
+Feature: ${featurePath.replace(baseDir, '').replace(/^[\/\\]/, '')}
+Requirements: ${reqStatus}
+Design: ${desStatus}
+Tasks: ${tskStatus}
+Next Step: ${nextSteps}`;
     } catch (e: any) {
-      return `❌ **Error:** ${e.message}\nPlease use \`spec_init {"name": "your-feature"}\` to start a new feature.`;
+      return `Project: spec-cli | Phase: Error
+Error: ${e.message}
+Next Step: Run \`sc_exec init --name "your-feature"\` to start a new feature.`;
     }
   }
 }

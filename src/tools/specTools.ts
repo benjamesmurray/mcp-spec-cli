@@ -1,182 +1,121 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { existsSync, mkdirSync, writeFileSync } from 'fs';
-import { join } from 'path';
-import { SpecManager } from '../features/shared/SpecManager.js';
-import { getRequirementsTemplate, getDesignTemplate, getTasksTemplate } from '../features/shared/documentTemplates.js';
-import { completeTask } from '../features/task/completeTask.js';
+import { execFile } from 'child_process';
+import { promisify } from 'util';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const execFileAsync = promisify(execFile);
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const isTs = __filename.endsWith('.ts');
+const cliCmd = isTs ? 'npx' : 'node';
+const cliPath = join(__dirname, '..', isTs ? 'cli.ts' : 'cli.js');
+
+async function runCli(args: string[]): Promise<string> {
+  try {
+    const execArgs = isTs ? ['tsx', cliPath, ...args] : [cliPath, ...args];
+    const { stdout, stderr } = await execFileAsync(cliCmd, execArgs, {
+        cwd: process.cwd(),
+        env: process.env
+    });
+    if (stderr && stderr.trim().length > 0 && !stdout) {
+       throw new Error(stderr);
+    }
+    return stdout.trim();
+  } catch (error: any) {
+    if (error.stdout) return error.stdout.trim();
+    throw new Error(error.message || String(error));
+  }
+}
 
 export function registerSpecTools(server: McpServer): void {
-  // 1. spec_init
   server.registerTool(
-    'spec_init',
+    'sc_status',
     {
-      description: 'Initialize a new feature/project workflow. Run this to start a new feature.',
+      description: 'Get a health check of the active project and discover next steps.',
       inputSchema: {
-        name: z.string().describe('The name of the feature or project (e.g., auth-system)'),
-        description: z.string().optional().describe('Optional initial description or prompt')
+        feature: z.string().optional().describe('Feature name (optional)')
       }
     },
     async (args) => {
-      const baseDir = process.cwd();
-      const featurePath = join(baseDir, args.name);
-      
-      if (!existsSync(featurePath)) {
-        mkdirSync(featurePath, { recursive: true });
+      try {
+        const cliArgs = ['status'];
+        if (args.feature) cliArgs.push('--feature', args.feature);
+        const result = await runCli(cliArgs);
+        return { content: [{ type: 'text', text: result }] };
+      } catch (error: any) {
+        return { content: [{ type: 'text', text: `Error: ${error.message}` }], isError: true };
       }
-      
-      // We resolve it to set .spec_last_used
-      SpecManager.resolveFeaturePath(baseDir, args.name);
-      
-      const reqPath = join(featurePath, 'requirements.md');
-      if (!existsSync(reqPath)) {
-        const content = getRequirementsTemplate(args.name, args.description || 'Initial requirements');
-        writeFileSync(reqPath, content, 'utf-8');
-      }
-
-      return {
-        content: [{
-          type: 'text',
-          text: SpecManager.getStatusSummary(baseDir, args.name)
-        }]
-      };
     }
   );
 
-  // 2. spec_plan
   server.registerTool(
-    'spec_plan',
+    'sc_help',
     {
-      description: 'Progress the workflow state (Requirements -> Design -> Tasks) and inject instructions.',
+      description: 'Learn how to use the CLI tools and get deep documentation.',
       inputSchema: {
-        instruction: z.string().optional().describe('Instructions or updates for the current document'),
-        feature: z.string().optional().describe('Feature name (optional if context is already set)')
+        topic: z.string().optional().describe('Topic to get help for')
       }
     },
     async (args) => {
-      const baseDir = process.cwd();
       try {
-        const featurePath = SpecManager.resolveFeaturePath(baseDir, args.feature);
-        const state = SpecManager.getWorkflowState(featurePath);
+        const cliArgs = ['help'];
+        if (args.topic) cliArgs.push(args.topic);
+        const result = await runCli(cliArgs);
+        return { content: [{ type: 'text', text: result }] };
+      } catch (error: any) {
+        return { content: [{ type: 'text', text: `Error: ${error.message}` }], isError: true };
+      }
+    }
+  );
+
+  server.registerTool(
+    'sc_exec',
+    {
+      description: 'The primary workhorse tool. Run `sc_help` for usage details.',
+      inputSchema: {
+        action: z.enum(['init', 'plan', 'todo']).describe('The action to perform'),
+        resource: z.string().optional().describe('The resource to act upon (e.g. "list", "start") for todo'),
+        flags: z.record(z.string()).optional().describe('Key-value pairs for flags (e.g. {"feature": "auth", "id": "1"})')
+      }
+    },
+    async (args) => {
+      try {
+        const cliArgs = ['exec', args.action];
+        if (args.resource) cliArgs.push(args.resource);
         
-        let message = '';
-
-        if (!state.requirements.exists) {
-            // Scaffold requirements
-            const content = getRequirementsTemplate(featurePath.split('/').pop() || 'feature', args.instruction || '');
-            writeFileSync(join(featurePath, 'requirements.md'), content, 'utf-8');
-            message = 'Initialized requirements.md.';
-        } else if (!state.requirements.edited) {
-            message = 'Please finish editing requirements.md (remove all <template> tags) before advancing.';
-            if (args.instruction) message += `\n> Reminder instruction: ${args.instruction}`;
-        } else if (!state.design.exists) {
-            // Scaffold design
-            let content = getDesignTemplate(featurePath.split('/').pop() || 'feature');
-            if (args.instruction) {
-                content += `\n\n> **Guidance:** ${args.instruction}`;
+        if (args.flags) {
+            for (const [k, v] of Object.entries(args.flags)) {
+                cliArgs.push(`--${k}`, String(v));
             }
-            writeFileSync(join(featurePath, 'design.md'), content, 'utf-8');
-            message = 'Requirements complete. Scaffolding design.md.';
-        } else if (!state.design.edited) {
-            message = 'Please finish editing design.md (remove all <template> tags) before advancing.';
-            if (args.instruction) message += `\n> Reminder instruction: ${args.instruction}`;
-        } else if (!state.tasks.exists) {
-            // Scaffold tasks
-            let content = getTasksTemplate(featurePath.split('/').pop() || 'feature');
-            if (args.instruction) {
-                content += `\n\n> **Guidance:** ${args.instruction}`;
-            }
-            writeFileSync(join(featurePath, 'tasks.md'), content, 'utf-8');
-            message = 'Design complete. Scaffolding tasks.md.';
-        } else {
-            message = 'All documents exist. Proceed with `spec_todo`.';
-            if (args.instruction) message += `\n> Received instruction: ${args.instruction}`;
         }
-
-        return {
-          content: [{
-            type: 'text',
-            text: `${message}\n\n${SpecManager.getStatusSummary(baseDir, args.feature)}`
-          }]
-        };
-      } catch (error: any) {
-         return {
-          content: [{ type: 'text', text: `Error: ${error.message}` }],
-          isError: true
-        };
-      }
-    }
-  );
-
-  // 3. spec_todo
-  server.registerTool(
-    'spec_todo',
-    {
-      description: 'Manage tasks. Use action=list to view, start to mark in progress, complete to finish.',
-      inputSchema: {
-        action: z.enum(['list', 'complete', 'start']).describe('Action to perform'),
-        id: z.string().optional().describe('Task ID (required for complete/start)'),
-        feature: z.string().optional().describe('Feature name (optional if context is already set)')
-      }
-    },
-    async (args) => {
-      const baseDir = process.cwd();
-      try {
-        const featurePath = SpecManager.resolveFeaturePath(baseDir, args.feature);
         
-        if (args.action === 'list') {
-            // just return status summary
-            return {
-              content: [{
-                type: 'text',
-                text: SpecManager.getStatusSummary(baseDir, args.feature)
-              }]
-            };
-        } else if (args.action === 'complete' && args.id) {
-            const result = await completeTask({ path: featurePath, taskNumber: args.id });
-            return {
-               content: [{
-                 type: 'text',
-                 text: `${result.displayText}\n\n${SpecManager.getStatusSummary(baseDir, args.feature)}`
-               }]
-            };
-        } else {
-             return {
-              content: [{ type: 'text', text: `Action ${args.action} on id ${args.id} acknowledged.\n\n${SpecManager.getStatusSummary(baseDir, args.feature)}` }]
-            };
-        }
+        const result = await runCli(cliArgs);
+        return { content: [{ type: 'text', text: result }] };
       } catch (error: any) {
-         return {
-          content: [{ type: 'text', text: `Error: ${error.message}` }],
-          isError: true
-        };
+        return { content: [{ type: 'text', text: `Error: ${error.message}` }], isError: true };
       }
     }
   );
 
-  // 4. spec_status
   server.registerTool(
-    'spec_status',
+    'sc_verify',
     {
-      description: 'Get a health check of the active project and clear Next Steps.',
+      description: 'A dedicated tool to validate that the last action worked.',
       inputSchema: {
-        feature: z.string().optional().describe('Feature name (optional if context is already set)')
+         feature: z.string().optional().describe('Feature name (optional)')
       }
     },
     async (args) => {
-      const baseDir = process.cwd();
       try {
-        return {
-          content: [{
-            type: 'text',
-            text: SpecManager.getStatusSummary(baseDir, args.feature)
-          }]
-        };
+        const cliArgs = ['verify'];
+        if (args.feature) cliArgs.push('--feature', args.feature);
+        const result = await runCli(cliArgs);
+        return { content: [{ type: 'text', text: result }] };
       } catch (error: any) {
-         return {
-          content: [{ type: 'text', text: `Error: ${error.message}` }],
-          isError: true
-        };
+        return { content: [{ type: 'text', text: `Error: ${error.message}` }], isError: true };
       }
     }
   );
