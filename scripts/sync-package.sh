@@ -41,7 +41,7 @@ cat > package/package.json << EOF
     "implementation",
     "openapi"
   ],
-  "author": "kingkongshot",
+  "author": "benjamesmurray",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -112,7 +112,7 @@ Add to your MCP client configuration:
 
 ## Documentation
 
-For detailed usage instructions and examples, visit the [GitHub repository](https://github.com/kingkongshot/specs-workflow-mcp).
+For detailed usage instructions and examples, visit the [GitHub repository](https://github.com/benjamesmurray/mcp-spec-cli).
 
 ## License
 

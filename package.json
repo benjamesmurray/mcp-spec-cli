@@ -1,6 +1,6 @@
 {
   "name": "mcp-spec-cli",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "description": "MCP server for managing spec workflow (requirements, design, implementation)",
   "type": "module",
   "main": "dist/index.js",
@@ -34,7 +34,7 @@
     "workflow",
     "spec"
   ],
-  "author": "kingkongshot",
+  "author": "benjamesmurray",
   "license": "MIT",
   "repository": {
     "type": "git",
