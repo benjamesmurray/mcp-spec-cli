@@ -94,8 +94,9 @@ Add to your MCP client configuration:
 ```json
 {
   "mcpServers": {
-    "specs-workflow": {
-      "command": "spec-cli"
+    "mcp-spec-cli": {
+      "command": "npx",
+      "args": ["-y", "mcp-spec-cli@latest"]
     }
   }
 }
