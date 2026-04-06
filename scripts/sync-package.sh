@@ -24,8 +24,8 @@ cat > package/package.json << EOF
   "type": "module",
   "main": "dist/index.js",
   "bin": {
+    "mcp-spec-cli": "dist/index.js",
     "spec-cli": "dist/cli.js",
-    "mcp-spec-cli": "dist/cli.js",
     "spec-mcp": "dist/index.js"
   },
   "files": [
