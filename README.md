@@ -24,9 +24,10 @@ The traditional approach to AI coding often leads to scope creep and forgotten r
 stateDiagram-v2
     [*] --> Requirements: sc_exec init
     Requirements --> Design: sc_exec plan (resolve ambiguities & approve)
-    Design --> Implementation: sc_exec plan (resolve ambiguities & approve)
-    Implementation --> Tasks: sc_exec todo (start/complete)
-    Tasks --> [*]: All tasks completed
+    Design --> Tasks: sc_exec plan (resolve ambiguities & approve)
+    Tasks  --> Implementation: sc_exec todo (add dependencies, annotate tasks from design, & approve)
+    Implementation --> [*]: (start/complete) 
+    All tasks completed
 ```
 
 ## The 4 Semantic Tools

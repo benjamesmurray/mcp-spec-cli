@@ -25,9 +25,10 @@
 stateDiagram-v2
     [*] --> 需求(Requirements): sc_exec init
     需求(Requirements) --> 设计(Design): sc_exec plan (解决歧义并确认需求)
-    设计(Design) --> 实施(Implementation): sc_exec plan (解决歧义并确认设计)
-    实施(Implementation) --> 任务(Tasks): sc_exec todo (开始/完成)
-    任务(Tasks) --> [*]: 所有任务已完成
+    设计(Design) --> 任务(Tasks): sc_exec plan (解决歧义并确认设计)
+    任务(Tasks) --> 实施(Implementation): sc_exec todo (增加依赖、标注设计并确认)
+    实施(Implementation) --> [*]: (开始/完成)
+    所有任务已完成
 ```
 
 ## 4 个语义化核心工具
