@@ -18,13 +18,15 @@ echo "📄 Generating package.json..."
 MAIN_VERSION=$(node -p "require('./package.json').version")
 cat > package/package.json << EOF
 {
-  "name": "spec-cli",
+  "name": "mcp-spec-cli",
   "version": "$MAIN_VERSION",
   "description": "MCP server for managing spec workflow (requirements, design, implementation)",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "spec-cli": "dist/index.js"
+    "spec-cli": "dist/cli.js",
+    "mcp-spec-cli": "dist/cli.js",
+    "spec-mcp": "dist/index.js"
   },
   "files": [
     "dist/**/*",
@@ -43,12 +45,12 @@ cat > package/package.json << EOF
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/kingkongshot/specs-workflow-mcp.git"
+    "url": "git+https://github.com/benjamesmurray/mcp-spec-cli.git"
   },
   "bugs": {
-    "url": "https://github.com/kingkongshot/specs-workflow-mcp/issues"
+    "url": "https://github.com/benjamesmurray/mcp-spec-cli/issues"
   },
-  "homepage": "https://github.com/kingkongshot/specs-workflow-mcp#readme",
+  "homepage": "https://github.com/benjamesmurray/mcp-spec-cli#readme",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.6",
     "@types/js-yaml": "^4.0.9",

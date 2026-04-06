@@ -5,8 +5,7 @@
   "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "spec-cli": "dist/cli.js",
-    "spec-mcp": "dist/index.js"
+    "mcp-spec-cli": "dist/cli.js"
   },
   "files": [
     "dist/**/*",
@@ -38,12 +37,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/kingkongshot/specs-workflow-mcp.git"
+    "url": "git+https://github.com/benjamesmurray/mcp-spec-cli.git"
   },
   "bugs": {
-    "url": "https://github.com/kingkongshot/specs-workflow-mcp/issues"
+    "url": "https://github.com/benjamesmurray/mcp-spec-cli/issues"
   },
-  "homepage": "https://github.com/kingkongshot/specs-workflow-mcp#readme",
+  "homepage": "https://github.com/benjamesmurray/mcp-spec-cli#readme",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.16.0",
     "@types/js-yaml": "^4.0.9",
