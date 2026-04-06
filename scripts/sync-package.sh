@@ -52,9 +52,10 @@ cat > package/package.json << EOF
   },
   "homepage": "https://github.com/benjamesmurray/mcp-spec-cli#readme",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.6",
+    "@modelcontextprotocol/sdk": "^1.16.0",
     "@types/js-yaml": "^4.0.9",
     "js-yaml": "^4.1.0",
+    "marked": "^17.0.6",
     "zod": "^3.25.76"
   },
   "engines": {
