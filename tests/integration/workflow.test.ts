@@ -4,6 +4,7 @@ import { join } from 'path';
 import { tmpdir } from 'os';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { registerSpecTools } from '../../src/tools/specTools.js';
+import { WorkflowStateRepository } from '../../src/features/shared/workflowStateRepository.js';
 
 describe('Spec CLI Workflow Integration', () => {
   let tempDir: string;
@@ -13,7 +14,7 @@ describe('Spec CLI Workflow Integration', () => {
   beforeEach(() => {
     tempDir = join(tmpdir(), `spec-cli-integration-${Date.now()}`);
     mkdirSync(tempDir, { recursive: true });
-    
+
     // Mock process.cwd() to return our temp dir
     originalCwd = process.cwd;
     process.cwd = () => tempDir;
@@ -36,37 +37,40 @@ describe('Spec CLI Workflow Integration', () => {
 
   it('should execute a full spec workflow lifecycle', async () => {
     const featureName = 'payment-system';
+    const reqFile = WorkflowStateRepository.getStageFileName('requirements');
+    const desFile = WorkflowStateRepository.getStageFileName('design');
+    const tskFile = WorkflowStateRepository.getStageFileName('tasks');
 
     // 1. Initialize
     const initRes = await tools['sc_exec'].callback({ action: 'init', flags: { name: featureName, description: 'Add payments' } }, {});
     expect(initRes.content[0].text).toContain('Requirements: Pending Edits');
     expect(initRes.content[0].text).toContain('Run `sc_exec plan` to finalize specifications/requirements.');
-    
+
     // 2. plan (with requirements not finished)
     const planRes1 = await tools['sc_exec'].callback({ action: 'plan', flags: { instruction: 'Use Stripe' } }, {});
-    expect(planRes1.content[0].text).toContain('Please finish editing requirements.md');
+    expect(planRes1.content[0].text).toContain(`Please finish editing ${reqFile}`);
     expect(planRes1.content[0].text).toContain('Reminder instruction: Use Stripe');
-    
+
     // 3. Simulate AI finishing the requirements document (removing tags)
-    const reqPath = join(tempDir, featureName, 'requirements.md');
+    const reqPath = join(tempDir, featureName, reqFile);
     writeFileSync(reqPath, '# Requirements\nWe will use Stripe.', 'utf-8');
-    
+
     // 4. plan (advancing to Design)
     const planRes2 = await tools['sc_exec'].callback({ action: 'plan' }, {});
-    expect(planRes2.content[0].text).toContain('Requirements complete. Scaffolding design.md.');
+    expect(planRes2.content[0].text).toContain(`Requirements complete. Scaffolding ${desFile}.`);
     expect(planRes2.content[0].text).toContain('Design: Pending Edits');
-    
+
     // 5. Simulate AI finishing the design document
-    const desPath = join(tempDir, featureName, 'design.md');
+    const desPath = join(tempDir, featureName, desFile);
     writeFileSync(desPath, '# Design\nStripe API design.', 'utf-8');
-    
+
     // 6. plan (advancing to Tasks)
     const planRes3 = await tools['sc_exec'].callback({ action: 'plan' }, {});
-    expect(planRes3.content[0].text).toContain('Design complete. Scaffolding tasks.md.');
+    expect(planRes3.content[0].text).toContain(`Design complete. Scaffolding ${tskFile}.`);
     expect(planRes3.content[0].text).toContain('Tasks: Pending Edits');
 
     // 7. Simulate AI writing tasks
-    const tasksPath = join(tempDir, featureName, 'tasks.md');
+    const tasksPath = join(tempDir, featureName, tskFile);
     writeFileSync(tasksPath, '# Tasks\n- [ ] 1.1 Setup Stripe webhook\n- [ ] 1.2 Implement checkout', 'utf-8');
 
     // 8. sc_status (everything ready)
@@ -75,7 +79,7 @@ describe('Spec CLI Workflow Integration', () => {
     expect(statusRes.content[0].text).toContain('Run `sc_exec todo list` or `sc_exec todo start <id>` to begin implementation.');
 
     // 9. todo (Complete a task)
-    const todoRes = await tools['sc_exec'].callback({ action: 'todo', resource: 'complete', flags: { id: '1.1' } }, {});
+    const todoRes = await tools['sc_exec'].callback({ action: 'todo', resource: 'complete', flags: { feature: featureName, id: '1.1' } }, {});
     expect(todoRes.content[0].text).toContain('1.1');
     // Ensure file was modified
     const tasksContent = readFileSync(tasksPath, 'utf-8');

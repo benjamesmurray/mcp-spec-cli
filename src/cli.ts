@@ -3,7 +3,8 @@ import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { parseArgs } from 'util';
 import { SpecManager } from './features/shared/SpecManager.js';
-import { getRequirementsTemplate, getDesignTemplate, getTasksTemplate } from './features/shared/documentTemplates.js';
+import { TemplateRepository } from './features/shared/templateRepository.js';
+import { WorkflowStateRepository } from './features/shared/workflowStateRepository.js';
 import { completeTask } from './features/task/completeTask.js';
 import { Logger } from './logger.js';
 
@@ -73,9 +74,12 @@ Options:
         
         SpecManager.resolveFeaturePath(baseDir, featureName);
         
-        const reqPath = join(featurePath, 'requirements.md');
+        const reqPath = join(featurePath, WorkflowStateRepository.getStageFileName('requirements'));
         if (!existsSync(reqPath)) {
-          const content = getRequirementsTemplate(featureName, values.description || 'Initial requirements');
+          const content = TemplateRepository.getInterpolatedTemplate('requirements', { 
+            featureName, 
+            introduction: values.description || 'Initial requirements' 
+          });
           writeFileSync(reqPath, content, 'utf-8');
         }
 
@@ -88,25 +92,32 @@ Options:
         
         let message = '';
         if (!state.requirements.exists) {
-            const content = getRequirementsTemplate(featurePath.split('/').pop() || 'feature', values.instruction || '');
-            writeFileSync(join(featurePath, 'requirements.md'), content, 'utf-8');
-            message = 'Initialized requirements.md.';
+            const content = TemplateRepository.getInterpolatedTemplate('requirements', { 
+              featureName: featurePath.split('/').pop() || 'feature', 
+              introduction: values.instruction || '' 
+            });
+            writeFileSync(join(featurePath, WorkflowStateRepository.getStageFileName('requirements')), content, 'utf-8');
+            message = `Initialized ${WorkflowStateRepository.getStageFileName('requirements')}.`;
         } else if (!state.requirements.edited) {
-            message = 'Please finish editing requirements.md (remove all <template> tags) before advancing.';
+            message = `Please finish editing ${WorkflowStateRepository.getStageFileName('requirements')} (remove all <template> tags) before advancing.`;
             if (values.instruction) message += `\n> Reminder instruction: ${values.instruction}`;
         } else if (!state.design.exists) {
-            let content = getDesignTemplate(featurePath.split('/').pop() || 'feature');
+            let content = TemplateRepository.getInterpolatedTemplate('design', { 
+              featureName: featurePath.split('/').pop() || 'feature' 
+            });
             if (values.instruction) content += `\n\n> **Guidance:** ${values.instruction}`;
-            writeFileSync(join(featurePath, 'design.md'), content, 'utf-8');
-            message = 'Requirements complete. Scaffolding design.md.';
+            writeFileSync(join(featurePath, WorkflowStateRepository.getStageFileName('design')), content, 'utf-8');
+            message = `Requirements complete. Scaffolding ${WorkflowStateRepository.getStageFileName('design')}.`;
         } else if (!state.design.edited) {
-            message = 'Please finish editing design.md (remove all <template> tags) before advancing.';
+            message = `Please finish editing ${WorkflowStateRepository.getStageFileName('design')} (remove all <template> tags) before advancing.`;
             if (values.instruction) message += `\n> Reminder instruction: ${values.instruction}`;
         } else if (!state.tasks.exists) {
-            let content = getTasksTemplate(featurePath.split('/').pop() || 'feature');
+            let content = TemplateRepository.getInterpolatedTemplate('tasks', { 
+              featureName: featurePath.split('/').pop() || 'feature' 
+            });
             if (values.instruction) content += `\n\n> **Guidance:** ${values.instruction}`;
-            writeFileSync(join(featurePath, 'tasks.md'), content, 'utf-8');
-            message = 'Design complete. Scaffolding tasks.md.';
+            writeFileSync(join(featurePath, WorkflowStateRepository.getStageFileName('tasks')), content, 'utf-8');
+            message = `Design complete. Scaffolding ${WorkflowStateRepository.getStageFileName('tasks')}.`;
         } else {
             message = 'All documents exist. Proceed with `exec todo`.';
             if (values.instruction) message += `\n> Received instruction: ${values.instruction}`;

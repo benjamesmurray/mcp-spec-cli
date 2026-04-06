@@ -1,6 +1,7 @@
-import { existsSync, readFileSync, statSync, writeFileSync } from 'fs';
-import { join, resolve } from 'path';
+import { existsSync, readFileSync, writeFileSync } from 'fs';
+import { join } from 'path';
 import { isDocumentEdited } from './documentAnalyzer.js';
+import { WorkflowStateRepository } from './workflowStateRepository.js';
 
 export type FeatureState = 'Requirements Pending' | 'Requirements Confirmed' | 'Design Confirmed' | 'Tasks Pending' | 'Tasks Completed';
 
@@ -11,6 +12,9 @@ export interface WorkflowState {
   featurePath: string;
 }
 
+/**
+ * SpecManager manages the feature path resolution and overall workflow state.
+ */
 export class SpecManager {
   private static LAST_USED_FILE = '.spec_last_used';
 
@@ -19,12 +23,10 @@ export class SpecManager {
    */
   static resolveFeaturePath(baseDir: string, featureName?: string): string {
     if (featureName) {
-      // 1. Exact match in base
       if (existsSync(join(baseDir, featureName))) {
         this.setLastUsed(baseDir, featureName);
         return join(baseDir, featureName);
       }
-      // 2. Look in common subdirectories
       const commonDirs = ['specs', 'docs'];
       for (const dir of commonDirs) {
         if (existsSync(join(baseDir, dir, featureName))) {
@@ -32,14 +34,10 @@ export class SpecManager {
           return join(baseDir, dir, featureName);
         }
       }
-      
-      // 3. Fallback: create in baseDir
-      // If it doesn't exist anywhere, assume we are creating it in the current dir
       this.setLastUsed(baseDir, featureName);
       return join(baseDir, featureName);
     }
 
-    // Implicit Context (no featureName provided)
     const lastUsedPath = join(baseDir, this.LAST_USED_FILE);
     if (existsSync(lastUsedPath)) {
       const lastUsed = readFileSync(lastUsedPath, 'utf-8').trim();
@@ -60,7 +58,8 @@ export class SpecManager {
    * Infers the workflow state dynamically.
    */
   static getWorkflowState(featurePath: string): WorkflowState {
-    const checkDoc = (fileName: string) => {
+    const checkDoc = (stage: string) => {
+      const fileName = WorkflowStateRepository.getStageFileName(stage);
       const filePath = join(featurePath, fileName);
       return {
         exists: existsSync(filePath),
@@ -69,35 +68,35 @@ export class SpecManager {
     };
 
     return {
-      requirements: checkDoc('requirements.md'),
-      design: checkDoc('design.md'),
-      tasks: checkDoc('tasks.md'),
+      requirements: checkDoc('requirements'),
+      design: checkDoc('design'),
+      tasks: checkDoc('tasks'),
       featurePath
     };
   }
 
   /**
-   * Returns a dense Markdown output (TOON) representing the current status.
+   * Returns a dense Markdown output representing the current status.
    */
   static getStatusSummary(baseDir: string, featureName?: string): string {
     try {
       const featurePath = this.resolveFeaturePath(baseDir, featureName);
       const state = this.getWorkflowState(featurePath);
 
-      let reqStatus = state.requirements.exists ? (state.requirements.edited ? 'Approved' : 'Pending Edits') : 'Missing';
-      let desStatus = state.design.exists ? (state.design.edited ? 'Approved' : 'Pending Edits') : 'Missing';
-      let tskStatus = state.tasks.exists ? (state.tasks.edited ? 'Active' : 'Pending Edits') : 'Missing';
+      const reqStatus = state.requirements.exists ? (state.requirements.edited ? 'Approved' : 'Pending Edits') : 'Missing';
+      const desStatus = state.design.exists ? (state.design.edited ? 'Approved' : 'Pending Edits') : 'Missing';
+      const tskStatus = state.tasks.exists ? (state.tasks.edited ? 'Active' : 'Pending Edits') : 'Missing';
 
       let nextSteps = '';
       let phase = 'Specify';
       if (!state.requirements.exists || !state.requirements.edited) {
-         phase = 'Requirements';
+         phase = WorkflowStateRepository.getStageDisplayName('requirements');
          nextSteps = 'Run `sc_exec plan` to finalize specifications/requirements.';
       } else if (!state.design.exists || !state.design.edited) {
-         phase = 'Design';
+         phase = WorkflowStateRepository.getStageDisplayName('design');
          nextSteps = 'Run `sc_exec plan` to create an implementation plan (design).';
       } else if (!state.tasks.exists || !state.tasks.edited) {
-         phase = 'Planning';
+         phase = WorkflowStateRepository.getStageDisplayName('tasks');
          nextSteps = 'Run `sc_exec plan` to scaffold tasks.';
       } else {
          phase = 'Implementation';

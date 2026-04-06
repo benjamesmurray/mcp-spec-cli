@@ -3,6 +3,7 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { SpecManager } from '../../src/features/shared/SpecManager.js';
+import { WorkflowStateRepository } from '../../src/features/shared/workflowStateRepository.js';
 
 describe('SpecManager', () => {
   let tempDir: string;
@@ -89,8 +90,8 @@ describe('SpecManager', () => {
       const featurePath = join(tempDir, featureName);
       mkdirSync(featurePath);
       
-      // requirements.md with a template tag
-      writeFileSync(join(featurePath, 'requirements.md'), 'Content\n<template-requirements>\nPlaceholder\n</template-requirements>', 'utf-8');
+      const reqFile = WorkflowStateRepository.getStageFileName('requirements');
+      writeFileSync(join(featurePath, reqFile), 'Content\n<template-requirements>\nPlaceholder\n</template-requirements>', 'utf-8');
       
       const summary = SpecManager.getStatusSummary(tempDir, featureName);
       expect(summary).toContain('Requirements: Pending Edits');
@@ -102,8 +103,8 @@ describe('SpecManager', () => {
       const featurePath = join(tempDir, featureName);
       mkdirSync(featurePath);
       
-      // Edited requirements.md
-      writeFileSync(join(featurePath, 'requirements.md'), 'Completed requirements without tags', 'utf-8');
+      const reqFile = WorkflowStateRepository.getStageFileName('requirements');
+      writeFileSync(join(featurePath, reqFile), 'Completed requirements without tags', 'utf-8');
       
       const summary = SpecManager.getStatusSummary(tempDir, featureName);
       expect(summary).toContain('Requirements: Approved');
@@ -116,10 +117,9 @@ describe('SpecManager', () => {
       const featurePath = join(tempDir, featureName);
       mkdirSync(featurePath);
       
-      // All edited
-      writeFileSync(join(featurePath, 'requirements.md'), 'Req', 'utf-8');
-      writeFileSync(join(featurePath, 'design.md'), 'Des', 'utf-8');
-      writeFileSync(join(featurePath, 'tasks.md'), 'Tsk', 'utf-8');
+      writeFileSync(join(featurePath, WorkflowStateRepository.getStageFileName('requirements')), 'Req', 'utf-8');
+      writeFileSync(join(featurePath, WorkflowStateRepository.getStageFileName('design')), 'Des', 'utf-8');
+      writeFileSync(join(featurePath, WorkflowStateRepository.getStageFileName('tasks')), 'Tsk', 'utf-8');
       
       const summary = SpecManager.getStatusSummary(tempDir, featureName);
       expect(summary).toContain('Requirements: Approved');
