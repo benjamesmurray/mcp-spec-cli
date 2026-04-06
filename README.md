@@ -1,6 +1,6 @@
 # Spec CLI (MCP)
 
-[![npm version](https://img.shields.io/npm/v/spec-cli.svg)](https://www.npmjs.com/package/spec-cli)
+[![npm version](https://img.shields.io/npm/v/mcp-spec-cli.svg)](https://www.npmjs.com/package/mcp-spec-cli)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![MCP](https://img.shields.io/badge/MCP-Compatible-blue)](https://modelcontextprotocol.com)
 
@@ -10,12 +10,12 @@
 
 ## Why Spec CLI?
 
-The traditional approach to AI coding often leads to scope creep and forgotten requirements. `spec-cli` fixes this by providing:
+The traditional approach to AI coding often leads to scope creep and forgotten requirements. `mcp-spec-cli` fixes this by providing:
 
 *   **State-Aware Autopilot:** The tool knows exactly what stage the project is in. The AI doesn't have to track whether it's doing "Requirements" or "Design"—it just calls `sc_exec plan` and the tool handles the transition automatically.
 *   **Fuzzy Path Resolution:** The AI doesn't need to hunt for the project folder. You can say `sc_exec plan` and the tool instantly figures out the context from the most recently active feature (`.spec_last_used`).
-*   **The "GPS Breadcrumb" System:** At the end of every tool call, `spec-cli` outputs an explicit "Next Step" directive. For example, if Requirements are finished, the tool outputs: *"Success: Specifications created. Next Step: Run `sc_exec plan` to create an implementation plan (design)."* This turns the tool into an autonomous GPS, heavily reducing the need for lengthy system prompts.
-*   **Dense Markdown Context (TOON):** Instead of dumping massive JSON objects, `spec-cli` returns compact, actionable Markdown summaries that tell the AI exactly what to do next.
+*   **The "GPS Breadcrumb" System:** At the end of every tool call, `mcp-spec-cli` outputs an explicit "Next Step" directive. For example, if Requirements are finished, the tool outputs: *"Success: Specifications created. Next Step: Run `sc_exec plan` to create an implementation plan (design)."* This turns the tool into an autonomous GPS, heavily reducing the need for lengthy system prompts.
+*   **Dense Markdown Context (TOON):** Instead of dumping massive JSON objects, `mcp-spec-cli` returns compact, actionable Markdown summaries that tell the AI exactly what to do next.
 
 ## Workflow Diagram
 
@@ -41,9 +41,9 @@ stateDiagram-v2
 
 | Command | Description |
 | :--- | :--- |
-| `spec-cli exec init --name <feature>` | Initialize a new spec folder. |
-| `spec-cli status` | Check current progress. |
-| `spec-cli help` | Show help documentation. |
+| `mcp-spec-cli exec init --name <feature>` | Initialize a new spec folder. |
+| `mcp-spec-cli status` | Check current progress. |
+| `mcp-spec-cli help` | Show help documentation. |
 
 ## Configuration
 
@@ -62,13 +62,13 @@ stateDiagram-v2
 #### Option 1: Quick Start (npx)
 Run it without installing globally:
 ```bash
-npx -y spec-cli@latest
+npx -y mcp-spec-cli@latest
 ```
 
 #### Option 2: Global Installation
 For frequent use as a standalone CLI:
 ```bash
-npm install -g spec-cli
+npm install -g mcp-spec-cli
 ```
 
 #### Option 3: MCP Client Configuration
@@ -79,9 +79,9 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
 ```json
 {
   "mcpServers": {
-    "spec-cli": {
+    "mcp-spec-cli": {
       "command": "npx",
-      "args": ["-y", "spec-cli@latest"]
+      "args": ["-y", "mcp-spec-cli@latest"]
     }
   }
 }
@@ -92,24 +92,24 @@ Add to `~/.cursor/config.json` (or `.cursor/mcp.json`).
 
 **Claude Code**
 ```bash
-claude mcp add spec-cli -s user -- npx -y spec-cli@latest
+claude mcp add mcp-spec-cli -s user -- npx -y mcp-spec-cli@latest
 ```
 
 **Gemini CLI**
-Configure `spec-cli` globally in `~/.gemini/settings.json` or locally in `.gemini/settings.json`:
+Configure `mcp-spec-cli` globally in `~/.gemini/settings.json` or locally in `.gemini/settings.json`:
 ```json
 {
   "mcpServers": {
-    "spec-cli": {
+    "mcp-spec-cli": {
       "command": "npx",
-      "args": ["-y", "spec-cli@latest"]
+      "args": ["-y", "mcp-spec-cli@latest"]
     }
   }
 }
 ```
 *Context Instruction (`GEMINI.md`):*
 To ensure context efficiency, add the following to your project's `GEMINI.md`:
-> "You have access to the `spec-cli` MCP server. Always use `sc_status` to orient yourself before beginning work on a feature. Rely on the `> Next Steps:` output from the tool to guide your workflow transitions autonomously. Keep manual tool usage queries to a minimum."
+> "You have access to the `mcp-spec-cli` MCP server. Always use `sc_status` to orient yourself before beginning work on a feature. Rely on the `> Next Steps:` output from the tool to guide your workflow transitions autonomously. Keep manual tool usage queries to a minimum."
 
 **Continue.dev**
 Add the server to your `~/.continue/config.json` (or `.continue/mcpServers/tools.json`):
@@ -117,9 +117,9 @@ Add the server to your `~/.continue/config.json` (or `.continue/mcpServers/tools
 {
   "mcpServers": [
     {
-      "name": "spec-cli",
+      "name": "mcp-spec-cli",
       "command": "npx",
-      "args": ["-y", "spec-cli@latest"]
+      "args": ["-y", "mcp-spec-cli@latest"]
     }
   ]
 }
@@ -129,7 +129,7 @@ To integrate this seamlessly into your Continue.dev workflow, create a rule file
 ```markdown
 ---
 name: Spec Workflow
-description: Always use spec-cli to scaffold and plan new features
+description: Always use mcp-spec-cli to scaffold and plan new features
 ---
 When asked to build a new feature, do not guess the architecture immediately. Instead, use the `sc_exec` tool with the `init` action to scaffold the feature. Read the "Next Steps" provided by the tool's output to navigate the Requirements -> Design -> Implementation workflow autonomously.
 ```
@@ -149,8 +149,8 @@ When asked to build a new feature, do not guess the architecture immediately. In
 
 1.  **Clone the Repo**:
     ```bash
-    git clone https://github.com/benjamesmurray/spec-cli.git
-    cd spec-cli
+    git clone https://github.com/benjamesmurray/mcp-spec-cli.git
+    cd mcp-spec-cli
     ```
 2.  **Install Dependencies**:
     ```bash
@@ -168,7 +168,7 @@ When asked to build a new feature, do not guess the architecture immediately. In
 ### Testing & Debugging
 
 * **Local Testing (`npm link`)**: 
-    Run `npm link` in the root directory to test the `spec-cli` command globally using your local code.
+    Run `npm link` in the root directory to test the `mcp-spec-cli` command globally using your local code.
 * **MCP Inspector**: 
     Use the official MCP Inspector to test the server's tools without needing Claude or Cursor:
     ```bash

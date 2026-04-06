@@ -1,5 +1,5 @@
 {
-  "name": "spec-cli",
+  "name": "mcp-spec-cli",
   "version": "1.0.9",
   "description": "MCP server for managing spec workflow (requirements, design, implementation)",
   "type": "module",
