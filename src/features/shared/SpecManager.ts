@@ -86,8 +86,8 @@ export class SpecManager {
       const featurePath = this.resolveFeaturePath(baseDir, featureName);
       const state = this.getWorkflowState(featurePath);
 
-      const reqStatus = state.requirements.exists ? (state.requirements.edited ? 'Approved' : 'Pending Edits') : 'Missing';
-      const desStatus = state.design.exists ? (state.design.edited ? 'Approved' : 'Pending Edits') : 'Missing';
+      const reqStatus = state.requirements.exists ? (state.requirements.edited ? 'Drafted' : 'Pending Edits') : 'Missing';
+      const desStatus = state.design.exists ? (state.design.edited ? 'Drafted' : 'Pending Edits') : 'Missing';
       const tskStatus = state.tasks.exists ? (state.tasks.edited ? 'Active' : 'Pending Edits') : 'Missing';
       
       let allTasksComplete = false;
@@ -102,25 +102,37 @@ export class SpecManager {
         allTasksComplete = tasks.length > 0 && areTasksDone(tasks);
       }
 
-      const tstStatus = state.testing.exists ? (state.testing.edited ? 'Approved' : 'Pending Edits') : 'Missing';
+      const tstStatus = state.testing.exists ? (state.testing.edited ? 'Drafted' : 'Pending Edits') : 'Missing';
 
       let nextSteps = '';
       let phase = 'Specify';
-      if (!state.requirements.exists || !state.requirements.edited) {
+      if (!state.requirements.exists) {
          phase = WorkflowStateRepository.getStageDisplayName('requirements');
-         nextSteps = 'Run `sc_exec plan` to finalize specifications/requirements.';
-      } else if (!state.design.exists || !state.design.edited) {
+         nextSteps = 'Run `sc_exec plan` to initialize requirements.';
+      } else if (!state.requirements.edited) {
+         phase = WorkflowStateRepository.getStageDisplayName('requirements');
+         nextSteps = 'Edit requirements document. Remove all `<template-requirements>` tags. Once edited, you MUST ask the user "Do the requirements look good?" before proceeding.';
+      } else if (!state.design.exists) {
+         phase = WorkflowStateRepository.getStageDisplayName('requirements');
+         nextSteps = 'Requirements drafted. You MUST ask the user for explicit approval. Once explicitly approved, run `sc_exec plan` to scaffold the design phase.';
+      } else if (!state.design.edited) {
          phase = WorkflowStateRepository.getStageDisplayName('design');
-         nextSteps = 'Run `sc_exec plan` to create an implementation plan (design).';
-      } else if (!state.tasks.exists || !state.tasks.edited) {
+         nextSteps = 'Edit design document. Conduct necessary research. Remove all `<template-design>` tags. Once edited, you MUST ask the user "Does the design look good?" before proceeding.';
+      } else if (!state.tasks.exists) {
+         phase = WorkflowStateRepository.getStageDisplayName('design');
+         nextSteps = 'Design drafted. You MUST ask the user for explicit approval. Once explicitly approved, run `sc_exec plan` to scaffold the tasks phase.';
+      } else if (!state.tasks.edited) {
          phase = WorkflowStateRepository.getStageDisplayName('tasks');
-         nextSteps = 'Run `sc_exec plan` to scaffold tasks.';
+         nextSteps = 'Edit tasks document. Important: Remember to perform a refresh of the tasks.md document by adding dependencies and organizing the execution order. Remove all `<template-tasks>` tags. Once edited, you MUST ask the user "Do the tasks look good?" before proceeding.';
       } else if (!allTasksComplete) {
          phase = 'Implementation';
-         nextSteps = 'Run `sc_exec todo list` or `sc_exec todo start <id>` to begin implementation.';
-      } else if (!state.testing.exists || !state.testing.edited) {
+         nextSteps = 'Tasks drafted and approved. Run `sc_exec todo list` or `sc_exec todo start <id>` to begin implementation.';
+      } else if (!state.testing.exists) {
          phase = WorkflowStateRepository.getStageDisplayName('testing');
-         nextSteps = state.testing.exists ? 'Complete user testing and provide feedback.' : 'Run `sc_exec plan` to scaffold user testing plan.';
+         nextSteps = 'Implementation complete. Run `sc_exec plan` to scaffold the user testing plan.';
+      } else if (!state.testing.edited) {
+         phase = WorkflowStateRepository.getStageDisplayName('testing');
+         nextSteps = 'Edit testing document. Provide manual testing steps. Remove all `<template-testing>` tags. Ask the user to execute tests and provide feedback.';
       } else {
          phase = 'Completed';
          nextSteps = 'Feature workflow is complete.';

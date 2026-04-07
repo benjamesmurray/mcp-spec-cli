@@ -14,8 +14,10 @@ The traditional approach to AI coding often leads to scope creep and forgotten r
 
 *   **State-Aware Autopilot:** The tool knows exactly what stage the project is in. The AI doesn't have to track whether it's doing "Requirements" or "Design"—it just calls `sc_exec plan` and the tool handles the transition automatically.
 *   **Autonomous Ambiguity Check:** After documenting requirements and design, the tool explicitly instructs the AI to check for and resolve any ambiguities or uncertainties itself before proceeding to the next stage.
+*   **Automated Guidance Injection:** Automatically injects phase-specific engineering constraints (Requirements, Design, Tasks) directly into the workflow, ensuring the AI adheres to the specified rigour.
+*   **Draft-to-Approval Enforcement:** Enforces a "Drafted" state that requires explicit user approval before the "GPS Breadcrumb" system allows advancing to the next phase via `sc_exec plan`.
 *   **Intelligent Task Organization:** After the initial task document is written, the tool performs a "refresh" step. It organizes tasks with clear dependencies, establishes a sensible execution order, and annotates them with cross-references to the requirements and design documents.
-*   **Persistent Task-Epoch Memory:** A "short-term memory" system (`.epoch-context.md`) that tracks active focus, pending intentions, and hypotheses. This ensures that if an AI session is interrupted or closed, the next session resumes with perfect context of "what was I just doing?"
+*   **Persistent Task-Epoch Memory:** A "short-term memory" system (`.epoch-context.md`) that tracks active focus, pending intentions, and hypotheses via `sc_exec epoch`. This ensures that if an AI session is interrupted or closed, the next session resumes with perfect context.
 *   **Human-in-the-Loop Robustness:** Enforces a strict "Ask -> Approve -> Confirm" cycle. The AI is instructed to check for ambiguities and seek explicit user approval before the system allows transitioning to the next workflow phase.
 *   **The "GPS Breadcrumb" System:** At the end of every tool call, `mcp-spec-cli` outputs an explicit "Next Step" directive. This turns the tool into an autonomous GPS, heavily reducing the need for lengthy system prompts.
 *   **Lexer-Guided Reliability:** Uses a robust Markdown lexer (powered by `marked`) instead of fragile Regular Expressions to parse and surgically update documents. This ensures task checkboxes are updated accurately without corrupting other formatting.
@@ -78,7 +80,7 @@ stateDiagram-v2
 
 | Tool Name | Purpose | Example Arguments |
 | :--- | :--- | :--- |
-| `sc_exec` | The primary workhorse tool. Performs init, plan, todo actions. | `{"action": "init", "flags": {"name": "auth-system"}}` |
+| `sc_exec` | The primary workhorse tool. Performs init, plan, todo, and epoch actions. | `{"action": "epoch", "flags": {"focus": "implement auth"}}` |
 | `sc_status` | Returns a health check and next steps. | `{}` |
 | `sc_help` | Learn how to use the CLI tools and get deep documentation. | `{"topic": "exec"}` |
 | `sc_verify` | A dedicated tool to validate that the last action worked. | `{"feature": "auth-system"}` |
@@ -88,7 +90,8 @@ stateDiagram-v2
 | Command | Description |
 | :--- | :--- |
 | `mcp-spec-cli exec init --name <feature>` | Initialize a new spec folder. |
-| `mcp-spec-cli status` | Check current progress. |
+| `mcp-spec-cli exec epoch --focus <text>` | Update the epoch context with current focus. |
+| `mcp-spec-cli status` | Check current progress and GPS next steps. |
 | `mcp-spec-cli help` | Show help documentation. |
 
 ## Installation & Setup

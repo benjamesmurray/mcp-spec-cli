@@ -114,7 +114,7 @@ describe('Workflow State Diagram Integration', () => {
     const finalStatus = await tools['sc_status'].callback({ feature: featureName }, {});
     expect(finalStatus.content[0].text).toContain('Tasks: Completed');
     expect(finalStatus.content[0].text).toContain('Testing: Missing');
-    expect(finalStatus.content[0].text).toContain('Run `sc_exec plan` to scaffold user testing plan.');
+    expect(finalStatus.content[0].text).toContain('Run `sc_exec plan` to scaffold the user testing plan.');
 
     const tasksContent = readFileSync(tasksPath, 'utf-8');
     expect(tasksContent).not.toContain('- [ ]');

@@ -82,7 +82,7 @@ describe('SpecManager', () => {
       expect(summary).toContain('Requirements: Missing');
       expect(summary).toContain('Design: Missing');
       expect(summary).toContain('Tasks: Missing');
-      expect(summary).toContain('Run `sc_exec plan` to finalize specifications/requirements.');
+      expect(summary).toContain('Run `sc_exec plan` to initialize requirements.');
     });
 
     it('should return pending edits if document contains <template-*> tags', () => {
@@ -95,10 +95,10 @@ describe('SpecManager', () => {
       
       const summary = SpecManager.getStatusSummary(tempDir, featureName);
       expect(summary).toContain('Requirements: Pending Edits');
-      expect(summary).toContain('Run `sc_exec plan` to finalize specifications/requirements.');
+      expect(summary).toContain('Edit requirements document. Remove all `<template-requirements>` tags. Once edited, you MUST ask the user "Do the requirements look good?" before proceeding.');
     });
 
-    it('should return approved if document exists and has no <template-*> tags', () => {
+    it('should return drafted if document exists and has no <template-*> tags', () => {
       const featureName = 'test-feature';
       const featurePath = join(tempDir, featureName);
       mkdirSync(featurePath);
@@ -107,9 +107,9 @@ describe('SpecManager', () => {
       writeFileSync(join(featurePath, reqFile), 'Completed requirements without tags', 'utf-8');
       
       const summary = SpecManager.getStatusSummary(tempDir, featureName);
-      expect(summary).toContain('Requirements: Approved');
+      expect(summary).toContain('Requirements: Drafted');
       expect(summary).toContain('Design: Missing');
-      expect(summary).toContain('Next Step: Run `sc_exec plan` to create an implementation plan (design).');
+      expect(summary).toContain('Next Step: Requirements drafted. You MUST ask the user for explicit approval. Once explicitly approved, run `sc_exec plan` to scaffold the design phase.');
     });
     
     it('should handle full workflow completion state', () => {
@@ -122,10 +122,10 @@ describe('SpecManager', () => {
       writeFileSync(join(featurePath, WorkflowStateRepository.getStageFileName('tasks')), 'Tsk', 'utf-8');
       
       const summary = SpecManager.getStatusSummary(tempDir, featureName);
-      expect(summary).toContain('Requirements: Approved');
-      expect(summary).toContain('Design: Approved');
+      expect(summary).toContain('Requirements: Drafted');
+      expect(summary).toContain('Design: Drafted');
       expect(summary).toContain('Tasks: Active');
-      expect(summary).toContain('Next Step: Run `sc_exec todo list` or `sc_exec todo start <id>` to begin implementation.');
+      expect(summary).toContain('Next Step: Tasks drafted and approved. Run `sc_exec todo list` or `sc_exec todo start <id>` to begin implementation.');
     });
 
     it('should include epoch context in status summary if file exists', () => {

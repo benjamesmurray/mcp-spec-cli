@@ -44,7 +44,7 @@ describe('Spec CLI Workflow Integration', () => {
     // 1. Initialize
     const initRes = await tools['sc_exec'].callback({ action: 'init', flags: { name: featureName, description: 'Add payments' } }, {});
     expect(initRes.content[0].text).toContain('Requirements: Pending Edits');
-    expect(initRes.content[0].text).toContain('Run `sc_exec plan` to finalize specifications/requirements.');
+    expect(initRes.content[0].text).toContain('Edit requirements document. Remove all `<template-requirements>` tags. Once edited, you MUST ask the user "Do the requirements look good?" before proceeding.');
 
     // 2. plan (with requirements not finished)
     const planRes1 = await tools['sc_exec'].callback({ action: 'plan', flags: { instruction: 'Use Stripe' } }, {});

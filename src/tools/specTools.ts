@@ -76,9 +76,9 @@ export function registerSpecTools(server: McpServer): void {
     {
       description: 'The primary workhorse tool. Run `sc_help` for usage details.',
       inputSchema: {
-        action: z.enum(['init', 'plan', 'todo']).describe('The action to perform'),
+        action: z.enum(['init', 'plan', 'todo', 'epoch']).describe('The action to perform'),
         resource: z.string().optional().describe('The resource to act upon (e.g. "list", "start") for todo'),
-        flags: z.record(z.string()).optional().describe('Key-value pairs for flags (e.g. {"feature": "auth", "id": "1"})')
+        flags: z.record(z.string()).optional().describe('Key-value pairs for flags (e.g. {"feature": "auth", "id": "1", "focus": "update tests"})')
       }
     },
     async (args) => {

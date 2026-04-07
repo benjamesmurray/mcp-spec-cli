@@ -67,6 +67,13 @@ export class OpenApiLoader {
     return this.spec?.['x-document-templates']?.[type] || null;
   }
 
+  getSharedResourceText(uri: string): string | null {
+    if (!this.spec?.['x-shared-resources']) return null;
+    const resources = Object.values(this.spec['x-shared-resources']);
+    const resource = resources.find((r: any) => r.uri === uri);
+    return resource?.text || null;
+  }
+
   getTaskGuidanceTemplate() {
     return this.spec?.['x-task-guidance-template'] || null;
   }

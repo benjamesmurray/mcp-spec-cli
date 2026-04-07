@@ -5,6 +5,7 @@ import { parseArgs } from 'util';
 import { SpecManager } from './features/shared/SpecManager.js';
 import { TemplateRepository } from './features/shared/templateRepository.js';
 import { WorkflowStateRepository } from './features/shared/workflowStateRepository.js';
+import { openApiLoader } from './features/shared/openApiLoader.js';
 import { completeTask } from './features/task/completeTask.js';
 import { Logger } from './logger.js';
 
@@ -103,6 +104,8 @@ Options:
             });
             writeFileSync(join(featurePath, WorkflowStateRepository.getStageFileName('requirements')), content, 'utf-8');
             message = `Initialized ${WorkflowStateRepository.getStageFileName('requirements')}.`;
+            const guide = openApiLoader.getSharedResourceText('requirements-guide');
+            if (guide) message += `\n\n--- Guide ---\n${guide}`;
         } else if (!state.requirements.edited) {
             message = `Please finish editing ${WorkflowStateRepository.getStageFileName('requirements')} (remove all <template> tags) before advancing.`;
             if (values.instruction) message += `\n> Reminder instruction: ${values.instruction}`;
@@ -114,6 +117,8 @@ Options:
             writeFileSync(join(featurePath, WorkflowStateRepository.getStageFileName('design')), content, 'utf-8');
             writeFileSync(join(featurePath, '.epoch-context.md'), `# Epoch Context\n\n**Current Phase:** Design\n\n`, 'utf-8');
             message = `Requirements complete. Scaffolding ${WorkflowStateRepository.getStageFileName('design')}. Epoch context reset.`;
+            const guide = openApiLoader.getSharedResourceText('design-guide');
+            if (guide) message += `\n\n--- Guide ---\n${guide}`;
         } else if (!state.design.edited) {
             message = `Please finish editing ${WorkflowStateRepository.getStageFileName('design')} (remove all <template> tags) before advancing.`;
             if (values.instruction) message += `\n> Reminder instruction: ${values.instruction}`;
@@ -125,6 +130,8 @@ Options:
             writeFileSync(join(featurePath, WorkflowStateRepository.getStageFileName('tasks')), content, 'utf-8');
             writeFileSync(join(featurePath, '.epoch-context.md'), `# Epoch Context\n\n**Current Phase:** Implementation Planning\n\n`, 'utf-8');
             message = `Design complete. Scaffolding ${WorkflowStateRepository.getStageFileName('tasks')}. Epoch context reset.`;
+            const guide = openApiLoader.getSharedResourceText('tasks-guide');
+            if (guide) message += `\n\n--- Guide ---\n${guide}`;
         } else if (!state.tasks.edited) {
             message = `Please finish editing ${WorkflowStateRepository.getStageFileName('tasks')} (remove all <template> tags) before advancing.`;
             if (values.instruction) message += `\n> Reminder instruction: ${values.instruction}`;
@@ -151,6 +158,8 @@ Options:
                 writeFileSync(join(featurePath, WorkflowStateRepository.getStageFileName('testing')), content, 'utf-8');
                 writeFileSync(join(featurePath, '.epoch-context.md'), `# Epoch Context\n\n**Current Phase:** User Testing\n\n`, 'utf-8');
                 message = `Implementation complete. Scaffolding ${WorkflowStateRepository.getStageFileName('testing')}. Epoch context reset.`;
+                const guide = openApiLoader.getSharedResourceText('testing-guide');
+                if (guide) message += `\n\n--- Guide ---\n${guide}`;
             } else if (!state.testing.edited) {
                 message = `Please finish editing ${WorkflowStateRepository.getStageFileName('testing')} (remove all <template> tags) and wait for user feedback before advancing.`;
                 if (values.instruction) message += `\n> Reminder instruction: ${values.instruction}`;

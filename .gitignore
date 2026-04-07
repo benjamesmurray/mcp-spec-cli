@@ -62,6 +62,9 @@ CLAUDE.local.md
 # Preview files
 preview/
 
+# Temporary files
+.spec_last_used
+
 # Prompt files (migrated to OpenAPI)
 prompts/
 
