@@ -125,9 +125,38 @@ Options:
             writeFileSync(join(featurePath, WorkflowStateRepository.getStageFileName('tasks')), content, 'utf-8');
             writeFileSync(join(featurePath, '.epoch-context.md'), `# Epoch Context\n\n**Current Phase:** Implementation Planning\n\n`, 'utf-8');
             message = `Design complete. Scaffolding ${WorkflowStateRepository.getStageFileName('tasks')}. Epoch context reset.`;
+        } else if (!state.tasks.edited) {
+            message = `Please finish editing ${WorkflowStateRepository.getStageFileName('tasks')} (remove all <template> tags) before advancing.`;
+            if (values.instruction) message += `\n> Reminder instruction: ${values.instruction}`;
         } else {
-            message = 'All documents exist. Proceed with `exec todo`.';
-            if (values.instruction) message += `\n> Received instruction: ${values.instruction}`;
+            // Check if all tasks are complete
+            let allTasksComplete = false;
+            const tasksPath = join(featurePath, WorkflowStateRepository.getStageFileName('tasks'));
+            if (existsSync(tasksPath)) {
+                const tasksContent = readFileSync(tasksPath, 'utf-8');
+                const TaskParser = require('./features/shared/taskParser.js').TaskParser;
+                const tasks = TaskParser.parse(tasksContent);
+                const areTasksDone = (ts: any[]): boolean => ts.every(t => t.completed && (t.children.length === 0 || areTasksDone(t.children)));
+                allTasksComplete = tasks.length > 0 && areTasksDone(tasks);
+            }
+
+            if (!allTasksComplete) {
+                message = 'Not all implementation tasks are complete. Proceed with `exec todo` or finish tasks manually.';
+                if (values.instruction) message += `\n> Received instruction: ${values.instruction}`;
+            } else if (!state.testing.exists) {
+                let content = TemplateRepository.getInterpolatedTemplate('testing', { 
+                  featureName: featurePath.split('/').pop() || 'feature' 
+                });
+                if (values.instruction) content += `\n\n> **Guidance:** ${values.instruction}`;
+                writeFileSync(join(featurePath, WorkflowStateRepository.getStageFileName('testing')), content, 'utf-8');
+                writeFileSync(join(featurePath, '.epoch-context.md'), `# Epoch Context\n\n**Current Phase:** User Testing\n\n`, 'utf-8');
+                message = `Implementation complete. Scaffolding ${WorkflowStateRepository.getStageFileName('testing')}. Epoch context reset.`;
+            } else if (!state.testing.edited) {
+                message = `Please finish editing ${WorkflowStateRepository.getStageFileName('testing')} (remove all <template> tags) and wait for user feedback before advancing.`;
+                if (values.instruction) message += `\n> Reminder instruction: ${values.instruction}`;
+            } else {
+                message = 'Workflow is completely finished.';
+            }
         }
 
         output = `${message}\n\n${SpecManager.getStatusSummary(baseDir, values.feature)}`;

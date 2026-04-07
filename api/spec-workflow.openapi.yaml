@@ -841,12 +841,12 @@ components:
     # Common type definitions
     Stage:
       type: string
-      enum: [requirements, design, tasks, completed]
+      enum: [requirements, design, tasks, testing, completed]
       description: Current stage
     
     Progress:
       type: object
-      required: [overall, requirements, design, tasks]
+      required: [overall, requirements, design, tasks, testing]
       properties:
         overall:
           type: integer
@@ -868,6 +868,11 @@ components:
           minimum: 0
           maximum: 100
           description: Tasks phase progress
+        testing:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: Testing phase progress
       x-progress-rules:
         - description: Requirements phase accounts for 30%
           formula: requirements * 0.3
@@ -1236,6 +1241,28 @@ x-shared-resources:
       - The model MUST present this task to the user and ask: "Ready to start the first task?"
       - The model MUST begin implementation only after user confirmation
 
+  testing-guide:
+    uri: testing-guide
+    title: User Testing Guide
+    mimeType: text/markdown
+    text: |
+      # User Testing Plan Generation
+
+      Workflow Stage: User Testing
+
+      After all implementation tasks are complete, generate a manual testing plan for the user to execute to verify the feature works as intended.
+
+      **Constraints:**
+
+      - The model MUST use the specs-workflow tool with update_epoch action to continuously maintain the short-term memory of its current focus and open questions during the process
+      - The model MUST write the testing document in the user's preferred regional language
+      - The model MUST edit the existing testing.md file by removing the SPEC-MARKER comment block
+      - The model MUST provide a step-by-step list of manual testing actions based on the requirements and design
+      - After creating the testing plan, the model MUST ask the user "Please execute these tests and provide feedback. Are there any issues, or is testing complete?"
+      - If the user provides feedback requiring changes, the model MUST suggest updates to the requirements, design, or tasks, or address the issue directly
+      - The model MUST NOT proceed to completion until receiving clear approval that testing was successful and is complete
+      - Once the user confirms testing is successful, the model MUST use the specs-workflow tool with action.type="confirm" to complete the workflow
+
 # Global configuration
 x-global-config:
   icons:
@@ -1259,12 +1286,14 @@ x-global-config:
     requirements: "Requirements Document"
     design: "Design Document"  
     tasks: "Task List"
+    testing: "User Testing"
     completed: "Completed"
   
   file_names:
     requirements: "Requirements.md"
     design: "Design.md"
     tasks: "Tasks.md"
+    testing: "Testing.md"
 
 # Document templates
 x-document-templates:
@@ -1307,7 +1336,15 @@ x-document-templates:
         placeholder: "## Task Dependencies\n\n<template-tasks>\n- Task 1 must be completed before Task 2\n- Tasks 2.1 and 2.2 can be executed in parallel\n- Task 3 depends on completion of Tasks 1 and 2\n</template-tasks>"
       - name: "Estimated Timeline"
         placeholder: "## Estimated Timeline\n\n<template-tasks>\n- Task 1: 8 hours\n- Task 2: 12 hours\n- Task 3: 6 hours\n- **Total: 26 hours**\n</template-tasks>"
-  
+
+  testing:
+    title: "${featureName} - User Testing Plan"
+    sections:
+      - name: "Manual Testing Steps"
+        placeholder: "## Manual Testing Steps\n\n<template-testing>\nPlease provide a step-by-step list of manual testing actions for the user to execute to verify the feature.\n</template-testing>"
+      - name: "User Feedback"
+        placeholder: "## User Feedback\n\n<template-testing>\nRecord any feedback, issues, or required changes from the user here.\n</template-testing>"
+
   skipped:
     title: "${featureName} - ${stageName}"
     sections:

@@ -110,11 +110,13 @@ describe('Workflow State Diagram Integration', () => {
     expect(complete2.content[0].text).toContain('All tasks completed!');
     
     // Final check - in reality, "All tasks completed" might still show "Implementation" 
-    // but we verify the status summary reflects the completion.
+    // but we verify the status summary reflects the completion and transition to Testing.
     const finalStatus = await tools['sc_status'].callback({ feature: featureName }, {});
-    expect(finalStatus.content[0].text).toContain('Tasks: Active'); // Currently it stays "Active" even if all checked
-    
+    expect(finalStatus.content[0].text).toContain('Tasks: Completed');
+    expect(finalStatus.content[0].text).toContain('Testing: Missing');
+    expect(finalStatus.content[0].text).toContain('Run `sc_exec plan` to scaffold user testing plan.');
+
     const tasksContent = readFileSync(tasksPath, 'utf-8');
     expect(tasksContent).not.toContain('- [ ]');
-  }, 30000);
-});
+    }, 30000);
+    });

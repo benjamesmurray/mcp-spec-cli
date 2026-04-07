@@ -44,7 +44,7 @@ stateDiagram-v2
         ConfirmDes --> [*]: sc_exec plan
     }
 
-    state "Phase 4: Implementation Planning" as TSK {
+    state "Phase 3: Implementation Planning" as TSK {
         [*] --> ScaffoldTasks: Reset Epoch Context
         ScaffoldTasks --> RefreshTasks: Add Dependencies & Refs
         RefreshTasks --> AskUserTasks: "Does this look good?"
@@ -52,17 +52,26 @@ stateDiagram-v2
         ConfirmTasks --> [*]: sc_exec plan
     }
 
-    state "Phase 5: Implementation" as IMP {
+    state "Phase 4: Implementation" as IMP {
         [*] --> StartTask: sc_exec todo start
         StartTask --> Work: Coding & Epoch Updates
         Work --> CompleteTask: sc_exec todo complete
         CompleteTask --> [*]: All Tasks [x]
     }
 
+    state "Phase 5: User Testing" as TST {
+        [*] --> ScaffoldTest: sc_exec plan
+        ScaffoldTest --> ExecuteTest: User Runs Tests
+        ExecuteTest --> Feedback: Record User Feedback
+        Feedback --> ConfirmTest: Feedback Addressed
+        ConfirmTest --> [*]: sc_exec plan
+    }
+
     REQ --> DES
     DES --> TSK
     TSK --> IMP
-    IMP --> [*]: Feature Delivered
+    IMP --> TST
+    TST --> [*]: Feature Delivered
 ```
 
 ## The 4 Semantic Tools

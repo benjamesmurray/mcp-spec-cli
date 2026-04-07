@@ -2,13 +2,15 @@ import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { isDocumentEdited } from './documentAnalyzer.js';
 import { WorkflowStateRepository } from './workflowStateRepository.js';
+import { TaskParser } from './taskParser.js';
 
-export type FeatureState = 'Requirements Pending' | 'Requirements Confirmed' | 'Design Confirmed' | 'Tasks Pending' | 'Tasks Completed';
+export type FeatureState = 'Requirements Pending' | 'Requirements Confirmed' | 'Design Confirmed' | 'Tasks Pending' | 'Tasks Completed' | 'Testing Pending' | 'Testing Confirmed';
 
 export interface WorkflowState {
   requirements: { exists: boolean; edited: boolean };
   design: { exists: boolean; edited: boolean };
   tasks: { exists: boolean; edited: boolean };
+  testing: { exists: boolean; edited: boolean };
   featurePath: string;
 }
 
@@ -71,6 +73,7 @@ export class SpecManager {
       requirements: checkDoc('requirements'),
       design: checkDoc('design'),
       tasks: checkDoc('tasks'),
+      testing: checkDoc('testing'),
       featurePath
     };
   }
@@ -86,6 +89,20 @@ export class SpecManager {
       const reqStatus = state.requirements.exists ? (state.requirements.edited ? 'Approved' : 'Pending Edits') : 'Missing';
       const desStatus = state.design.exists ? (state.design.edited ? 'Approved' : 'Pending Edits') : 'Missing';
       const tskStatus = state.tasks.exists ? (state.tasks.edited ? 'Active' : 'Pending Edits') : 'Missing';
+      
+      let allTasksComplete = false;
+      if (state.tasks.exists && state.tasks.edited) {
+        const tasksPath = join(featurePath, WorkflowStateRepository.getStageFileName('tasks'));
+        const content = readFileSync(tasksPath, 'utf-8');
+        const tasks = TaskParser.parse(content);
+        const checkAllComplete = (ts: any[]): boolean => ts.length > 0 && ts.every(t => t.completed && checkAllComplete(t.children !== undefined ? t.children : []));
+        // We only require roots and their children to be complete. If no tasks, it's not complete.
+        // Wait, checkAllComplete needs to handle empty children properly.
+        const areTasksDone = (ts: any[]): boolean => ts.every(t => t.completed && (t.children.length === 0 || areTasksDone(t.children)));
+        allTasksComplete = tasks.length > 0 && areTasksDone(tasks);
+      }
+
+      const tstStatus = state.testing.exists ? (state.testing.edited ? 'Approved' : 'Pending Edits') : 'Missing';
 
       let nextSteps = '';
       let phase = 'Specify';
@@ -98,9 +115,15 @@ export class SpecManager {
       } else if (!state.tasks.exists || !state.tasks.edited) {
          phase = WorkflowStateRepository.getStageDisplayName('tasks');
          nextSteps = 'Run `sc_exec plan` to scaffold tasks.';
-      } else {
+      } else if (!allTasksComplete) {
          phase = 'Implementation';
          nextSteps = 'Run `sc_exec todo list` or `sc_exec todo start <id>` to begin implementation.';
+      } else if (!state.testing.exists || !state.testing.edited) {
+         phase = WorkflowStateRepository.getStageDisplayName('testing');
+         nextSteps = state.testing.exists ? 'Complete user testing and provide feedback.' : 'Run `sc_exec plan` to scaffold user testing plan.';
+      } else {
+         phase = 'Completed';
+         nextSteps = 'Feature workflow is complete.';
       }
 
       let epochInfo = '';
@@ -114,7 +137,8 @@ export class SpecManager {
 Feature: ${featurePath.replace(baseDir, '').replace(/^[\/\\]/, '')}
 Requirements: ${reqStatus}
 Design: ${desStatus}
-Tasks: ${tskStatus}
+Tasks: ${allTasksComplete ? 'Completed' : tskStatus}
+Testing: ${tstStatus}
 Next Step: ${nextSteps}${epochInfo}`;
     } catch (e: any) {
       return `Project: spec-cli | Phase: Error
