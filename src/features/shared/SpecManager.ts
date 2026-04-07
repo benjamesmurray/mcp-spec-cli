@@ -1,5 +1,5 @@
 import { existsSync, readFileSync, writeFileSync } from 'fs';
-import { join } from 'path';
+import { join, isAbsolute } from 'path';
 import { isDocumentEdited } from './documentAnalyzer.js';
 import { WorkflowStateRepository } from './workflowStateRepository.js';
 import { TaskParser } from './taskParser.js';
@@ -25,6 +25,13 @@ export class SpecManager {
    */
   static resolveFeaturePath(baseDir: string, featureName?: string): string {
     if (featureName) {
+      if (isAbsolute(featureName)) {
+        if (existsSync(featureName)) {
+          this.setLastUsed(baseDir, featureName);
+          return featureName;
+        }
+      }
+
       if (existsSync(join(baseDir, featureName))) {
         this.setLastUsed(baseDir, featureName);
         return join(baseDir, featureName);

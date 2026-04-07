@@ -29,7 +29,9 @@ export class TaskParser {
       }
 
       if (token.type === 'list_item') {
-        const match = token.text.match(/^(\d+(?:\.\d+)*)\.?(.*)$/);
+        const firstLine = token.text.split('\n')[0];
+        const textToMatch = firstLine.replace(/^\[[ xX]\]\s+/, '').trim();
+        const match = textToMatch.match(/^(\d+(?:\.\d+)*)\.?(.*)$/);
         if (match) {
           const id = match[1];
           const text = match[2].trim();

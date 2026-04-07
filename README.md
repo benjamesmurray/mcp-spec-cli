@@ -80,7 +80,7 @@ stateDiagram-v2
 
 | Tool Name | Purpose | Example Arguments |
 | :--- | :--- | :--- |
-| `sc_exec` | The primary workhorse tool. Performs init, plan, todo, and epoch actions. | `{"action": "epoch", "flags": {"focus": "implement auth"}}` |
+| `sc_exec` | The primary workhorse tool. Performs init, plan, todo, and epoch actions. | `{"action": "epoch", "flags": {"focus": "implement auth", "intentions": "add tests"}}` |
 | `sc_status` | Returns a health check and next steps. | `{}` |
 | `sc_help` | Learn how to use the CLI tools and get deep documentation. | `{"topic": "exec"}` |
 | `sc_verify` | A dedicated tool to validate that the last action worked. | `{"feature": "auth-system"}` |
@@ -89,10 +89,15 @@ stateDiagram-v2
 
 | Command | Description |
 | :--- | :--- |
-| `mcp-spec-cli exec init --name <feature>` | Initialize a new spec folder. |
-| `mcp-spec-cli exec epoch --focus <text>` | Update the epoch context with current focus. |
+| `mcp-spec-cli exec init --name <feature>` | Initialize a new spec folder (supports absolute paths). |
+| `mcp-spec-cli exec epoch --focus <text> --intentions <text>` | Update the epoch context with focus and intentions. |
 | `mcp-spec-cli status` | Check current progress and GPS next steps. |
 | `mcp-spec-cli help` | Show help documentation. |
+
+## Workflow Features
+
+*   **Robust Path Resolution:** Supports both relative and absolute paths for feature directories, ensuring reliability when running via MCP servers in various workspace configurations.
+*   **Multi-line Task Support:** High-integrity parsing of nested, multi-line implementation tasks, ensuring reliable tracking of complex coding steps.
 
 ## Installation & Setup
 

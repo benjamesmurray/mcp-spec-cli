@@ -7,6 +7,7 @@ import { TemplateRepository } from './features/shared/templateRepository.js';
 import { WorkflowStateRepository } from './features/shared/workflowStateRepository.js';
 import { openApiLoader } from './features/shared/openApiLoader.js';
 import { completeTask } from './features/task/completeTask.js';
+import { TaskParser } from './features/shared/taskParser.js';
 import { Logger } from './logger.js';
 
 const { positionals, values } = parseArgs({
@@ -45,6 +46,7 @@ Commands:
   exec init                Initialize a new feature
   exec plan                Progress the workflow state
   exec todo <action>       Manage tasks (list, start, complete)
+  exec epoch               Update the epoch context
   verify                   Verify current state
 
 Options:
@@ -53,6 +55,10 @@ Options:
   --name <name>            Feature or project name (for init)
   --description <text>     Optional description (for init)
   --id <id>                Task ID (for todo)
+  --focus <text>           Active focus (for epoch)
+  --intentions <text>      Pending intentions (for epoch)
+  --hypotheses <text>      Active hypotheses (for epoch)
+  --openQuestions <text>   Open questions (for epoch)
 `;
       console.log(output);
       Logger.logCommand(process.argv.slice(2).join(' '), [], output);
@@ -141,7 +147,6 @@ Options:
             const tasksPath = join(featurePath, WorkflowStateRepository.getStageFileName('tasks'));
             if (existsSync(tasksPath)) {
                 const tasksContent = readFileSync(tasksPath, 'utf-8');
-                const TaskParser = require('./features/shared/taskParser.js').TaskParser;
                 const tasks = TaskParser.parse(tasksContent);
                 const areTasksDone = (ts: any[]): boolean => ts.every(t => t.completed && (t.children.length === 0 || areTasksDone(t.children)));
                 allTasksComplete = tasks.length > 0 && areTasksDone(tasks);
