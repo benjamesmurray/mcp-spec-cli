@@ -44,7 +44,7 @@ components:
 
             The system will automatically resolve this to: {specsPath}/{featureName}/
 
-            **For setup_workspace**: Not required - the system uses current working directory as project root.
+            **For sc_init**: Not required - the system uses current working directory as project root.
         action:
           $ref: '#/components/schemas/Action'
     
@@ -54,11 +54,11 @@ components:
       properties:
         type:
           type: string
-          enum: [setup_workspace, init, check, skip, confirm, complete_task, update_epoch]
+          enum: [sc_init, init, check, skip, confirm, complete_task, update_epoch]
           description: |
             Operation type to perform:
 
-            - **setup_workspace**: Initialize project workspace (usually not called directly - MCP will automatically guide model to use this when needed)
+            - **sc_init**: Initialize project workspace (usually not called directly - MCP will automatically guide model to use this when needed)
             - **init**: Initialize a new feature specification
             - **check**: Check current workflow status
             - **skip**: Skip current stage
@@ -71,7 +71,7 @@ components:
           description: Feature introduction (required for init)
         language:
           type: string
-          description: User preferred language for documentation (required for setup_workspace)
+          description: User preferred language for documentation (required for sc_init)
         taskNumber:
           oneOf:
             - type: string
@@ -169,7 +169,7 @@ components:
             **Language Preference**: I will use (user's preferred language) for document writing - do you agree?
             - User can respond with: "Chinese", "English", "zh-CN", etc.
 
-            After getting the user's response, model please call setup_workspace again with the language parameter.
+            After getting the user's response, model please call sc_init again with the language parameter.
 
             📁 Specification documents will be automatically stored in the .specs folder in the project root directory.
 
@@ -179,7 +179,7 @@ components:
             projectRoot: /project/root
             language: English
             userGuidelinesCreated: true
-            configPath: /project/root/.specs/.specs-workflow.json
+            configPath: /project/root/.specs/.spec-workflow.json
           displayText: |
             ✅ Project initialization successful!
 
@@ -202,7 +202,7 @@ components:
             error: "Project already initialized"
             errorType: "already_initialized"
             projectRoot: /project/root
-            configPath: /project/root/.specs/.specs-workflow.json
+            configPath: /project/root/.specs/.spec-workflow.json
             suggestions: ["Delete .specs directory and reinitialize", "Or use existing configuration directly"]
           displayText: |
             ❌ Project already initialized
@@ -210,7 +210,7 @@ components:
             📁 Project root path: ${projectRoot}
             📝 Configuration file: ${configPath}
 
-            If user needs to reconfigure, model please ask user to delete the .specs directory first, then run setup_workspace again.
+            If user needs to reconfigure, model please ask user to delete the .specs directory first, then run sc_init again.
 
         - success: false
           data:
@@ -272,10 +272,10 @@ components:
             Model please continue with the following actions:
             1. Read the requirements-guide below
             2. First read ${path}/requirements.md, then start writing the document
-            3. After completing the document, use specs-workflow tool with action.type="check" to check the document format
+            3. After completing the document, use sc_status to check the document status
             4. When check passes, the model must check if there are any ambiguities or uncertainties to be addressed before proceeding. The model should address these itself unless there is a type of uncertainty which needs guidance from the user.
             5. Once all ambiguities are resolved, the model must ask the user "Do the requirements look good?", and must not proceed to the design document until getting explicit approval (e.g., "yes", "approved", "looks good", etc.)
-            6. When the user approves, the model must use the specs-workflow tool with action.type="confirm" to enter the design phase
+            6. When the user approves, the model must use the sc_plan tool to enter the design phase
             
             Special case - Skip requirements phase:
             - Only consider skipping when user explicitly requests (e.g., "skip requirements document", "go directly to design")
@@ -283,7 +283,7 @@ components:
               1. Explain to user this is an unconventional operation, requirements document is the foundation of the entire development process
               2. Clearly state the risks: design may deviate from actual requirements, increasing rework costs
               3. Ask the user: "Understanding these risks, are you sure you want to skip the requirements phase?"
-              4. Only use action.type="skip" after user explicitly confirms
+              4. Only proceed after user explicitly confirms
 
     
     # Check response
@@ -325,15 +325,15 @@ components:
             📝 Created: requirements.md
             
             📊 Overall progress: ${progress}%
-            🔄 Current status: Writing requirements document (current) → Next step: use check to verify format
+            🔄 Current status: Writing requirements document (current) → Next step: use sc_status to verify progress
             
             Model please continue with the following actions:
             1. Read the requirements-guide below
             2. First read ${path}/requirements.md, then start writing the document
-            3. After completing the document, use specs-workflow tool with action.type="check" to check the document format
+            3. After completing the document, use sc_status to check the document status
             4. When check passes, the model must check if there are any ambiguities or uncertainties to be addressed before proceeding. The model should address these itself unless there is a type of uncertainty which needs guidance from the user.
             5. Once all ambiguities are resolved, the model must ask the user "Do the requirements look good?", and must not proceed to the design document until getting explicit approval (e.g., "yes", "approved", "looks good", etc.)
-            6. When the user approves, the model must use the specs-workflow tool with action.type="confirm" to enter the design phase
+            6. When the user approves, the model must use the sc_plan tool to enter the design phase
             
             Special case - Skip requirements phase:
             - Only consider skipping when user explicitly requests (e.g., "skip requirements document", "go directly to design")
@@ -341,7 +341,7 @@ components:
               1. Explain to user this is an unconventional operation, requirements document is the foundation of the entire development process
               2. Clearly state the risks: design may deviate from actual requirements, increasing rework costs
               3. Ask the user: "Understanding these risks, are you sure you want to skip the requirements phase?"
-              4. Only use action.type="skip" after user explicitly confirms
+              4. Only proceed after user explicitly confirms
 
         
         - stage: requirements
@@ -363,7 +363,7 @@ components:
             1. Check if there are any ambiguities or uncertainties to be addressed before proceeding. Address these yourself unless there is a type of uncertainty which needs guidance from the user.
             2. Once all ambiguities are resolved, ask the user "Do the requirements look good?"
             3. Wait for explicit user approval (e.g., "yes", "approved", "looks good", etc.)
-            4. After approval, use the specs-workflow tool with action.type="confirm"
+            4. After approval, use the sc_plan tool
             5. Enter the design phase
         
         - stage: design
@@ -387,10 +387,10 @@ components:
             Model please continue with the following actions:
             1. Read the design-guide below
             2. First read ${path}/design.md, then start writing the document
-            3. After completing the document, use specs-workflow tool with action.type="check" to check the document format
+            3. After completing the document, use sc_status to check the document status
             4. When check passes, the model must check if there are any ambiguities or uncertainties to be addressed before proceeding. The model should address these itself unless there is a type of uncertainty which needs guidance from the user.
             5. Once all ambiguities are resolved, the model must ask the user "Does the design look good?", and must not proceed to task writing until getting explicit approval (e.g., "yes", "approved", "looks good", etc.)
-            6. When the user approves, the model must use the specs-workflow tool with action.type="confirm" to enter the tasks phase
+            6. When the user approves, the model must use the sc_plan tool to enter the tasks phase
             
             Special case - Skip design phase:
             - Only consider skipping when user explicitly requests (e.g., "skip design document", "go directly to tasks")
@@ -401,7 +401,7 @@ components:
                  - Implementation direction may deviate from best practices
                  - Code structure may lack overall planning
               3. Ask the user: "Understanding these risks, are you sure you want to skip the design phase?"
-              4. Only use action.type="skip" after user explicitly confirms
+              4. Only proceed after user explicitly confirms
 
             
         - stage: design
@@ -424,7 +424,7 @@ components:
             2. Once all ambiguities are resolved, ask the user "Does the design look good?"
             3. Wait for explicit user approval (e.g., "yes", "approved", "looks good", etc.)
             4. Must not proceed to task writing until getting explicit approval
-            5. After approval, use the specs-workflow tool with action.type="confirm"
+            5. After approval, use the sc_plan tool
             6. Enter the tasks phase
             
         - stage: tasks
@@ -449,9 +449,9 @@ components:
             1. Read the task writing guide below
             2. First read ${path}/tasks.md, then start writing the document
             3. Once the tasks are documented, do a refresh of the tasks.md document by adding dependencies between the tasks, structuring the tasks into a sensible order of execution, and annotating the tasks with information from the requirements and the design docs.
-            4. After completing the refresh, use specs-workflow tool with action.type="check" to check the document format
+            4. After completing the refresh, use sc_status to check the document status
             5. When check passes, the model must ask the user "Does the task plan look good?", and continue after getting explicit approval
-            6. When the user approves, the model must use the specs-workflow tool with action.type="confirm" to complete the workflow
+            6. When the user approves, the model must use the sc_plan tool to complete the workflow
 
             
         - stage: tasks
@@ -478,7 +478,7 @@ components:
             Model please continue with the following actions:
             1. Ask the user "Does the task plan look good?"
             2. Wait for explicit user approval (e.g., "yes", "approved", "looks good", etc.)
-            3. After approval, use the specs-workflow tool with action.type="confirm"
+            3. After approval, use the sc_plan tool
             4. Complete the entire workflow
             
         - stage: completed
@@ -581,7 +581,7 @@ components:
             - If user is not ready to develop now, user can skip temporarily
 
             To write the tasks document later:
-            1. Use action.type="check" to review current status
+            1. Use sc_status to review current status
             2. Edit the tasks.md document with implementation details
             3. Confirm when ready to start development
 
@@ -630,10 +630,10 @@ components:
             Model please continue with the following actions:
             1. Read the design-guide below
             2. First read ${path}/design.md, then start writing the document
-            3. After completing the document, use specs-workflow tool with action.type="check" to check the document format
+            3. After completing the document, use sc_status to check the document status
             4. When check passes, the model must check if there are any ambiguities or uncertainties to be addressed before proceeding. The model should address these itself unless there is a type of uncertainty which needs guidance from the user.
             5. Once all ambiguities are resolved, the model must ask the user "Does the design look good?", and must not proceed to task writing until getting explicit approval (e.g., "yes", "approved", "looks good", etc.)
-            6. When the user approves, the model must use the specs-workflow tool with action.type="confirm" to enter the tasks phase
+            6. When the user approves, the model must use the sc_plan tool to enter the tasks phase
             
             Special case - Skip design phase:
             - Only consider skipping when user explicitly requests (e.g., "skip design document", "go directly to tasks")
@@ -644,7 +644,7 @@ components:
                  - Implementation direction may deviate from best practices
                  - Code structure may lack overall planning
               3. Ask the user: "Understanding these risks, are you sure you want to skip the design phase?"
-              4. Only use action.type="skip" after user explicitly confirms
+              4. Only proceed after user explicitly confirms
 
         
         - stage: design
@@ -668,9 +668,9 @@ components:
             1. Read the task writing guide below
             2. First read ${path}/tasks.md, then start writing the document
             3. Once the tasks are documented, do a refresh of the tasks.md document by adding dependencies between the tasks, structuring the tasks into a sensible order of execution, and annotating the tasks with information from the requirements and the design docs.
-            4. After completing the refresh, use specs-workflow tool with action.type="check" to check the document format
+            4. After completing the refresh, use sc_status to check the document status
             5. When check passes, the model must ask the user "Does the task plan look good?", and continue after getting explicit approval
-            6. When the user approves, the model must use the specs-workflow tool with action.type="confirm" to complete the workflow
+            6. When the user approves, the model must use the sc_plan tool to complete the workflow
 
             
         - stage: tasks
@@ -796,7 +796,7 @@ components:
             ⚠️ IMPORTANT INSTRUCTIONS FOR MODEL:
             1. [TASK FOCUS] Model MUST follow the workflow instructions to complete the specified task, not plan tasks independently.
 
-            2. [PROGRESS TRACKING] After completing each subtask, model MUST use the specs-workflow tool with complete_task action to mark it complete. DO NOT edit task.md directly.
+            2. [PROGRESS TRACKING] After completing each subtask, model MUST use the sc_todo_complete tool to mark it complete. DO NOT edit task.md directly.
             3. [WORKFLOW] Implement task → Call complete_task to mark complete → Get next task automatically → Continue implementation
 
             Model: Please confirm your preferred execution mode:
@@ -805,7 +805,7 @@ components:
 
             **Automatic Mode**: The model will complete tasks sequentially until all tasks are finished without requiring confirmation for each step.
 
-            After you confirm your preferred approach, I will execute the development work for ${firstSubtask} according to your chosen mode, and immediately use complete_task after completing this specified task to proceed to the next one.
+            After you confirm your preferred approach, I will execute the development work for ${firstSubtask} according to your chosen mode, and immediately use sc_todo_complete to proceed to the next one.
         - success: false
           completedTasks: []
           alreadyCompleted: []
@@ -940,7 +940,7 @@ x-error-responses:
       Model: Please ask user to choose one of the following actions:
       1. Delete existing files and reinitialize: rm -rf ${path}/*
       2. Initialize in a new directory: use a different path parameter
-      3. Continue editing existing project: use action.type="check" to check project status and read existing documents to see if adjustments are needed
+      3. Continue editing existing project: use sc_status to check project status and read existing documents to see if adjustments are needed
   
   missingParameters:
     displayText: |
@@ -958,10 +958,10 @@ x-error-responses:
       📄 ${documentName} still contains template markers and has not been edited.
       
       The document appears to be in its initial state with placeholder content.
-      Before confirming, you must edit the document and then use action.type="check" to verify the document is ready.
+      Before confirming, you must edit the document and then use sc_status to verify the document is ready.
       
       If you want to skip writing this document:
-      - Use action.type="skip" to bypass this stage
+      - Only proceed after user explicitly confirms
       - Note: Skipping important documents may impact project quality
   
   taskAlreadyCompleted:
@@ -983,13 +983,10 @@ x-error-responses:
 
       Before using other features, model please complete project initialization first:
 
-      **Step 1: Call workspace setup**
+      **Step 1: Call sc_init**
       ```json
       {
-        "path": "${path}",
-        "action": {
-          "type": "setup_workspace"
-        }
+        "name": "${name}"
       }
       ```
 
@@ -1010,11 +1007,7 @@ x-error-responses:
 
       ```json
       {
-        "path": "${path}",
-        "action": {
-          "type": "setup_workspace",
-          "language": "your language preference"
-        }
+        "name": "your-feature-name"
       }
       ```
 
@@ -1105,7 +1098,7 @@ x-shared-resources:
       
       **Constraints:**
       
-      - The model MUST use the specs-workflow tool with update_epoch action to continuously maintain the short-term memory of its current focus and open questions during the process
+      - The model MUST use the sc_epoch tool to continuously maintain the short-term memory of its current focus and open questions during the process
       - The model MUST write the requirements document in the user's preferred regional language
       - The model MUST edit the existing requirements.md file by removing the SPEC-MARKER comment block
       - The model MUST fill in the requirements document based on the user's rough idea WITHOUT asking sequential questions first
@@ -1115,14 +1108,17 @@ x-shared-resources:
           - A user story in the format "As a [role], I want [feature], so that [benefit]"
           - A numbered list of acceptance criteria in EARS format (Easy Approach to Requirements Syntax)
       - The model SHOULD consider edge cases, user experience, technical constraints, and success criteria in the initial requirements
-      - After updating the requirement document, the model MUST ask the user "Do the requirements look good? If so, we can move on to the design." 
+      - After updating the requirement document, the model MUST enter the Ambiguity Resolution Loop:
+        - Perform a thorough self-review of the requirements for ambiguities, edge cases, or missing details.
+        - Use the sc_epoch tool to record open questions.
+        - Resolve any issues you can confidently address yourself by updating the document.
+        - Ask the user targeted questions to resolve the remaining ambiguities.
+        - When using a prompter tool (like ask_user), you MUST ALWAYS include an 'Other' or open-ended text option so the user is not restricted to strict Yes/No answers.
+        - DO NOT ask for final approval (e.g., "Do the requirements look good?") yet. If the user's answers raise new questions, you must continue this loop.
+      - Only when you have zero open questions should you ask for final, explicit approval.
       - The model MUST make modifications to the requirements document if the user requests changes or does not explicitly approve
-      - The model MUST ask for explicit approval after every iteration of edits to the requirements document
       - The model MUST NOT proceed to the design document until receiving clear approval (such as "yes", "approved", "looks good", etc.)
       - The model MUST continue the feedback-revision cycle until explicit approval is received
-      - The model SHOULD suggest specific areas where the requirements might need clarification or expansion
-      - The model MAY ask targeted questions about specific aspects of the requirements that need clarification
-      - The model MAY suggest options when the user is unsure about a particular aspect
       - The model MUST proceed to the design phase after the user accepts the requirements
 
   design-guide:
@@ -1139,7 +1135,7 @@ x-shared-resources:
       
       **Constraints:**
 
-      - The model MUST use the specs-workflow tool with update_epoch action to continuously maintain the short-term memory of its current focus, hypotheses, and open questions during the process
+      - The model MUST use the sc_epoch tool to continuously maintain the short-term memory of its current focus, hypotheses, and open questions during the process
       - The model MUST write the design document in the user's preferred regional language
       - The model MUST edit the existing design.md file by removing the SPEC-MARKER comment block
       - The model MUST identify areas where research is needed based on the feature requirements
@@ -1160,9 +1156,15 @@ x-shared-resources:
       - The model MUST ensure the design addresses all feature requirements identified during the clarification process
       - The model SHOULD highlight design decisions and their rationales
       - The model MAY ask the user for input on specific technical decisions during the design process
-      - After updating the design document, the model MUST ask the user "Does the design look good? If so, we can move on to the implementation plan."
+      - After updating the design document, the model MUST enter the Ambiguity Resolution Loop:
+        - Perform a thorough self-review of the design for technical ambiguities or missing details.
+        - Use the sc_epoch tool to record open questions.
+        - Resolve any issues you can confidently address yourself by updating the document.
+        - Ask the user targeted questions to resolve the remaining ambiguities.
+        - When using a prompter tool (like ask_user), you MUST ALWAYS include an 'Other' or open-ended text option so the user is not restricted to strict Yes/No answers.
+        - DO NOT ask for final approval (e.g., "Does the design look good?") yet. If the user's answers raise new questions, you must continue this loop.
+      - Only when you have zero open questions should you ask for final, explicit approval.
       - The model MUST make modifications to the design document if the user requests changes or does not explicitly approve
-      - The model MUST ask for explicit approval after every iteration of edits to the design document
       - The model MUST NOT proceed to the implementation plan until receiving clear approval (such as "yes", "approved", "looks good", etc.)
       - The model MUST continue the feedback-revision cycle until explicit approval is received
       - The model MUST incorporate all user feedback into the design document before proceeding
@@ -1182,7 +1184,7 @@ x-shared-resources:
       
       **Constraints:**
 
-      - The model MUST use the specs-workflow tool with update_epoch action to continuously maintain the short-term memory of its current focus and intentions during the process
+      - The model MUST use the sc_epoch tool to continuously maintain the short-term memory of its current focus and intentions during the process
       - The model MUST write the tasks document in the user's preferred regional language
       - The model MUST edit the existing tasks.md file by removing the SPEC-MARKER comment block
       - The model MUST return to the design step if the user indicates any changes are needed to the design
@@ -1226,7 +1228,14 @@ x-shared-resources:
         - Business process changes or organizational changes
         - Marketing or communication activities
         - Any task that cannot be completed through writing, modifying, or testing code
-      - After updating the tasks document, the model MUST ask the user "Do the tasks look good?" 
+      - After updating the tasks document, the model MUST enter the Ambiguity Resolution Loop:
+        - Perform a thorough self-review of the task list for missing dependencies or unclear steps.
+        - Use the sc_epoch tool to record open questions.
+        - Resolve any issues you can confidently address yourself by updating the document.
+        - Ask the user targeted questions to resolve the remaining ambiguities.
+        - When using a prompter tool (like ask_user), you MUST ALWAYS include an 'Other' or open-ended text option so the user is not restricted to strict Yes/No answers.
+        - DO NOT ask for final approval (e.g., "Do the tasks look good?") yet. If the user's answers raise new questions, you must continue this loop.
+      - Only when you have zero open questions should you ask for final, explicit approval.
       - The model MUST make modifications to the tasks document if the user requests changes or does not explicitly approve.
       - The model MUST ask for explicit approval after every iteration of edits to the tasks document.
       - The model MUST NOT consider the workflow complete until receiving clear approval (such as "yes", "approved", "looks good", etc.).
@@ -1254,14 +1263,14 @@ x-shared-resources:
 
       **Constraints:**
 
-      - The model MUST use the specs-workflow tool with update_epoch action to continuously maintain the short-term memory of its current focus and open questions during the process
+      - The model MUST use the sc_epoch tool to continuously maintain the short-term memory of its current focus and open questions during the process
       - The model MUST write the testing document in the user's preferred regional language
       - The model MUST edit the existing testing.md file by removing the SPEC-MARKER comment block
       - The model MUST provide a step-by-step list of manual testing actions based on the requirements and design
       - After creating the testing plan, the model MUST ask the user "Please execute these tests and provide feedback. Are there any issues, or is testing complete?"
       - If the user provides feedback requiring changes, the model MUST suggest updates to the requirements, design, or tasks, or address the issue directly
       - The model MUST NOT proceed to completion until receiving clear approval that testing was successful and is complete
-      - Once the user confirms testing is successful, the model MUST use the specs-workflow tool with action.type="confirm" to complete the workflow
+      - Once the user confirms testing is successful, the model MUST use the sc_plan tool to complete the workflow
 
 # Global configuration
 x-global-config:
@@ -1362,13 +1371,13 @@ x-task-guidance-template:
   instructions:
     prefix: "⚠️ IMPORTANT INSTRUCTIONS FOR MODEL:"
     taskFocus: "1. [TASK FOCUS] Model MUST follow the workflow instructions to complete the specified task, not plan tasks independently."
-    progressTracking: "2. [PROGRESS TRACKING] After completing each subtask, model MUST use the specs-workflow tool with complete_task action to mark it complete. DO NOT edit task.md directly."
-    workflow: "3. [WORKFLOW] Implement task → Call complete_task to mark complete → Get next task automatically → Continue implementation"
+    progressTracking: "2. [PROGRESS TRACKING] After completing each subtask, model MUST use sc_todo_complete to mark it complete. DO NOT edit task.md directly."
+    workflow: "3. [WORKFLOW] Implement task → Call sc_todo_complete to mark complete → Get next task automatically → Continue implementation"
   prompts:
-    firstTask: "Model: Please ask user \"Would you prefer to complete tasks one by one and report progress for your confirmation, or complete tasks sequentially and mark them as done until all tasks are finished at once?\" After user confirms, execute the development work for ${firstSubtask} according to user's preferred approach, and immediately use complete_task after completing this specified task."
-    nextTask: "Model: Please execute the development work for ${firstSubtask} and immediately use complete_task after completing this specified task."
-    continueTask: "Model: Please execute the development work for ${firstSubtask} and immediately use complete_task after completing this specified task."
-    batchContinue: "Model: Please execute the development work for ${firstSubtask} and immediately use complete_task after completing this specified task."
+    firstTask: "Model: Please ask user \"Would you prefer to complete tasks one by one and report progress for your confirmation, or complete tasks sequentially and mark them as done until all tasks are finished at once?\" After user confirms, execute the development work for ${firstSubtask} according to user's preferred approach, and immediately use sc_todo_complete after completing this specified task."
+    nextTask: "Model: Please execute the development work for ${firstSubtask} and immediately use sc_todo_complete after completing this specified task."
+    continueTask: "Model: Please execute the development work for ${firstSubtask} and immediately use sc_todo_complete after completing this specified task."
+    batchContinue: "Model: Please execute the development work for ${firstSubtask} and immediately use sc_todo_complete after completing this specified task."
   completionMessages:
     taskCompleted: "✅ Task ${taskNumber} marked as completed!"
     allCompleted: "🎉 Congratulations! All tasks completed!\n\nYou have successfully completed all implementation tasks. Project implementation phase completed."
@@ -1376,4 +1385,6 @@ x-task-guidance-template:
     batchSucceeded: "✅ Batch task processing succeeded"
     batchCompleted: "ℹ️ Batch task processing completed"
   batchLabels:
+    completedTasks: "Completed tasks"
+tchLabels:
     completedTasks: "Completed tasks"

@@ -42,44 +42,44 @@ describe('Spec CLI Workflow Integration', () => {
     const tskFile = WorkflowStateRepository.getStageFileName('tasks');
 
     // 1. Initialize
-    const initRes = await tools['sc_exec'].callback({ action: 'init', flags: { name: featureName, description: 'Add payments' } }, {});
+    const initRes = await tools['sc_init'].callback({ name: featureName, description: 'Add payments' }, {});
     expect(initRes.content[0].text).toContain('Requirements: Pending Edits');
-    expect(initRes.content[0].text).toContain('Edit requirements document. Remove all `<template-requirements>` tags. Once edited, you MUST ask the user "Do the requirements look good?" before proceeding.');
+    expect(initRes.content[0].text).toContain('Edit requirements document. Remove all `<template-requirements>` tags to indicate the draft is complete.');
 
     // 2. plan (with requirements not finished)
-    const planRes1 = await tools['sc_exec'].callback({ action: 'plan', flags: { instruction: 'Use Stripe' } }, {});
+    const planRes1 = await tools['sc_plan'].callback({ instruction: 'Use Stripe' }, {});
     expect(planRes1.content[0].text).toContain(`Please finish editing ${reqFile}`);
     expect(planRes1.content[0].text).toContain('Reminder instruction: Use Stripe');
 
     // 3. Simulate AI finishing the requirements document (removing tags)
-    const reqPath = join(tempDir, featureName, reqFile);
+    const reqPath = join(tempDir, 'projects', 'active', featureName, reqFile);
     writeFileSync(reqPath, '# Requirements\nWe will use Stripe.', 'utf-8');
 
     // 4. plan (advancing to Design)
-    const planRes2 = await tools['sc_exec'].callback({ action: 'plan' }, {});
+    const planRes2 = await tools['sc_plan'].callback({}, {});
     expect(planRes2.content[0].text).toContain(`Requirements complete. Scaffolding ${desFile}.`);
     expect(planRes2.content[0].text).toContain('Design: Pending Edits');
 
     // 5. Simulate AI finishing the design document
-    const desPath = join(tempDir, featureName, desFile);
+    const desPath = join(tempDir, 'projects', 'active', featureName, desFile);
     writeFileSync(desPath, '# Design\nStripe API design.', 'utf-8');
 
     // 6. plan (advancing to Tasks)
-    const planRes3 = await tools['sc_exec'].callback({ action: 'plan' }, {});
+    const planRes3 = await tools['sc_plan'].callback({}, {});
     expect(planRes3.content[0].text).toContain(`Design complete. Scaffolding ${tskFile}.`);
     expect(planRes3.content[0].text).toContain('Tasks: Pending Edits');
 
     // 7. Simulate AI writing tasks
-    const tasksPath = join(tempDir, featureName, tskFile);
+    const tasksPath = join(tempDir, 'projects', 'active', featureName, tskFile);
     writeFileSync(tasksPath, '# Tasks\n- [ ] 1.1 Setup Stripe webhook\n- [ ] 1.2 Implement checkout', 'utf-8');
 
     // 8. sc_status (everything ready)
     const statusRes = await tools['sc_status'].callback({}, {});
     expect(statusRes.content[0].text).toContain('Tasks: Active');
-    expect(statusRes.content[0].text).toContain('Run `sc_exec todo list` or `sc_exec todo start <id>` to begin implementation.');
+    expect(statusRes.content[0].text).toContain('Once approved, run `sc_todo_start --id <id>` to begin implementation.');
 
     // 9. todo (Complete a task)
-    const todoRes = await tools['sc_exec'].callback({ action: 'todo', resource: 'complete', flags: { feature: featureName, id: '1.1' } }, {});
+    const todoRes = await tools['sc_todo_complete'].callback({ feature: featureName, id: '1.1' }, {});
     expect(todoRes.content[0].text).toContain('1.1');
     // Ensure file was modified
     const tasksContent = readFileSync(tasksPath, 'utf-8');

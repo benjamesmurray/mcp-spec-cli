@@ -12,13 +12,13 @@
 
 The traditional approach to AI coding often leads to scope creep and forgotten requirements. `mcp-spec-cli` fixes this by providing:
 
-*   **State-Aware Autopilot:** The tool knows exactly what stage the project is in. The AI doesn't have to track whether it's doing "Requirements" or "Design"—it just calls `sc_exec plan` and the tool handles the transition automatically.
-*   **Autonomous Ambiguity Check:** After documenting requirements and design, the tool explicitly instructs the AI to check for and resolve any ambiguities or uncertainties itself before proceeding to the next stage.
+*   **State-Aware Autopilot:** The tool knows exactly what stage the project is in. The AI doesn't have to track whether it's doing "Requirements" or "Design"—it just calls `sc_plan` and the tool handles the transition automatically.
+*   **Ambiguity Resolution Loop:** Before asking for approval, the AI is instructed to perform a thorough self-review. It identifies uncertainties, resolves what it can independently, and asks targeted questions for the rest, ensuring a high-quality baseline before moving to the next phase.
+*   **One-Shot vs. Step-Through Modes:** Users can toggle between **Step-Through** (the default "Ask -> Approve -> Confirm" cycle) and **One-Shot** mode. In One-Shot mode, the AI autonomously resolves ambiguities and progresses through Requirements, Design, and Tasks without stopping for human approval until it reaches the User Testing phase.
+*   **Lifecycle Directory Management:** Automatically organizes work into `projects/active/` and `projects/completed/`. Once a workflow is finalized (or manually archived), the tool moves the entire feature folder to the completed directory.
 *   **Automated Guidance Injection:** Automatically injects phase-specific engineering constraints (Requirements, Design, Tasks) directly into the workflow, ensuring the AI adheres to the specified rigour.
-*   **Draft-to-Approval Enforcement:** Enforces a "Drafted" state that requires explicit user approval before the "GPS Breadcrumb" system allows advancing to the next phase via `sc_exec plan`.
 *   **Intelligent Task Organization:** After the initial task document is written, the tool performs a "refresh" step. It organizes tasks with clear dependencies, establishes a sensible execution order, and annotates them with cross-references to the requirements and design documents.
-*   **Persistent Task-Epoch Memory:** A "short-term memory" system (`.epoch-context.md`) that tracks active focus, pending intentions, and hypotheses via `sc_exec epoch`. This ensures that if an AI session is interrupted or closed, the next session resumes with perfect context.
-*   **Human-in-the-Loop Robustness:** Enforces a strict "Ask -> Approve -> Confirm" cycle. The AI is instructed to check for ambiguities and seek explicit user approval before the system allows transitioning to the next workflow phase.
+*   **Persistent Task-Epoch Memory:** A "short-term memory" system (`.epoch-context.md`) that tracks active focus, pending intentions, and hypotheses via `sc_epoch`. This ensures that if an AI session is interrupted or closed, the next session resumes with perfect context.
 *   **The "GPS Breadcrumb" System:** At the end of every tool call, `mcp-spec-cli` outputs an explicit "Next Step" directive. This turns the tool into an autonomous GPS, heavily reducing the need for lengthy system prompts.
 *   **Lexer-Guided Reliability:** Uses a robust Markdown lexer (powered by `marked`) instead of fragile Regular Expressions to parse and surgically update documents. This ensures task checkboxes are updated accurately without corrupting other formatting.
 
@@ -29,21 +29,21 @@ stateDiagram-v2
     direction TB
 
     state "Phase 1: Requirements" as REQ {
-        [*] --> InitReq: sc_exec init
+        [*] --> InitReq: sc_init
         InitReq --> EditReq: AI Drafts & Updates
-        EditReq --> CheckUncertainty: Update Epoch Context
-        CheckUncertainty --> AskUser: "Does this look good?"
+        EditReq --> AmbiguityLoop: Resolve Uncertainties
+        AmbiguityLoop --> AskUser: "Does this look good?"
         AskUser --> ConfirmReq: User Approves
-        ConfirmReq --> [*]: sc_exec plan
+        ConfirmReq --> [*]: sc_plan
     }
 
     state "Phase 2: Design" as DES {
         [*] --> ScaffoldDes: Reset Epoch Context
         ScaffoldDes --> Research: AI Research & Drafts
-        Research --> CheckUncertaintyDes: Update Epoch Context
-        CheckUncertaintyDes --> AskUserDes: "Does this look good?"
+        Research --> AmbiguityLoopDes: Resolve Uncertainties
+        AmbiguityLoopDes --> AskUserDes: "Does this look good?"
         AskUserDes --> ConfirmDes: User Approves
-        ConfirmDes --> [*]: sc_exec plan
+        ConfirmDes --> [*]: sc_plan
     }
 
     state "Phase 3: Implementation Planning" as TSK {
@@ -51,22 +51,26 @@ stateDiagram-v2
         ScaffoldTasks --> RefreshTasks: Add Dependencies & Refs
         RefreshTasks --> AskUserTasks: "Does this look good?"
         AskUserTasks --> ConfirmTasks: User Approves
-        ConfirmTasks --> [*]: sc_exec plan
+        ConfirmTasks --> [*]: sc_plan
     }
 
     state "Phase 4: Implementation" as IMP {
-        [*] --> StartTask: sc_exec todo start
+        [*] --> StartTask: sc_todo_start
         StartTask --> Work: Coding & Epoch Updates
-        Work --> CompleteTask: sc_exec todo complete
+        Work --> CompleteTask: sc_todo_complete
         CompleteTask --> [*]: All Tasks [x]
     }
 
     state "Phase 5: User Testing" as TST {
-        [*] --> ScaffoldTest: sc_exec plan
+        [*] --> ScaffoldTest: sc_plan
         ScaffoldTest --> ExecuteTest: User Runs Tests
         ExecuteTest --> Feedback: Record User Feedback
         Feedback --> ConfirmTest: Feedback Addressed
-        ConfirmTest --> [*]: sc_exec plan
+        ConfirmTest --> Archive: sc_plan (Finished)
+    }
+    
+    state Archive {
+        [*] --> MoveToCompleted: Move to projects/completed/
     }
 
     REQ --> DES
@@ -76,27 +80,44 @@ stateDiagram-v2
     TST --> [*]: Feature Delivered
 ```
 
-## The 4 Semantic Tools
+## MCP Semantic Tools
+
+Spec CLI provides a suite of surgical MCP tools to guide the AI agent through the workflow.
 
 | Tool Name | Purpose | Example Arguments |
 | :--- | :--- | :--- |
-| `sc_exec` | The primary workhorse tool. Performs init, plan, todo, and epoch actions. | `{"action": "epoch", "flags": {"focus": "implement auth", "intentions": "add tests"}}` |
-| `sc_status` | Returns a health check and next steps. | `{}` |
-| `sc_help` | Learn how to use the CLI tools and get deep documentation. | `{"topic": "exec"}` |
-| `sc_verify` | A dedicated tool to validate that the last action worked. | `{"feature": "auth-system"}` |
+| `sc_init` | Initialize a new feature specification in `projects/active/`. | `{"name": "auth-system", "mode": "one-shot"}` |
+| `sc_plan` | Progress the workflow state. Automatically archives when finished. | `{"instruction": "Use PostgreSQL"}` |
+| `sc_status` | Get a health check of the active project and next steps. | `{"feature": "auth-system"}` |
+| `sc_todo_list` | List all implementation tasks and their status. | `{}` |
+| `sc_todo_start` | Mark a specific task as being actively worked on. | `{"id": "1.1"}` |
+| `sc_todo_complete` | Mark a specific task as completed. | `{"id": "1.1"}` |
+| `sc_epoch` | Update the task-epoch context for short-term memory. | `{"focus": "implement auth"}` |
+| `sc_mode` | Toggle project mode between `one-shot` and `step-through`. | `{"mode": "one-shot"}` |
+| `sc_archive` | Manually move the project to the `projects/completed/` folder. | `{}` |
+| `sc_help` | Learn how to use the tools and get deep documentation. | `{"topic": "sc_plan"}` |
+| `sc_verify` | A dedicated tool to validate that the last action worked. | `{}` |
 
-## Command Reference
+## Command Line Interface
+
+While primarily used via MCP, Spec CLI also provides a powerful standalone interface.
 
 | Command | Description |
 | :--- | :--- |
-| `mcp-spec-cli exec init --name <feature>` | Initialize a new spec folder (supports absolute paths). |
-| `mcp-spec-cli exec epoch --focus <text> --intentions <text>` | Update the epoch context with focus and intentions. |
-| `mcp-spec-cli status` | Check current progress and GPS next steps. |
-| `mcp-spec-cli help` | Show help documentation. |
+| `spec-cli exec init --name <name>` | Initialize a new feature. |
+| `spec-cli exec plan` | Progress the workflow state. |
+| `spec-cli exec todo list` | List implementation tasks. |
+| `spec-cli exec epoch --focus <text>` | Update epoch context. |
+| `spec-cli exec mode <mode>` | Change autonomy mode. |
+| `spec-cli exec archive` | Manually archive a project. |
+| `spec-cli status` | Check progress and GPS next steps. |
+| `spec-cli verify` | Verify the current state. |
+| `spec-cli help` | Show help documentation. |
 
 ## Workflow Features
 
-*   **Robust Path Resolution:** Supports both relative and absolute paths for feature directories, ensuring reliability when running via MCP servers in various workspace configurations.
+*   **Lifecycle Isolation:** Keeps the root directory clean by automatically placing new features in `projects/active/` and moving them to `projects/completed/` when finished.
+*   **Robust Path Resolution:** Seamlessly finds features whether they are in the root, `projects/active/`, `projects/completed/`, `specs/`, or `docs/`.
 *   **Multi-line Task Support:** High-integrity parsing of nested, multi-line implementation tasks, ensuring reliable tracking of complex coding steps.
 
 ## Installation & Setup

@@ -104,11 +104,17 @@ Add to your MCP client configuration:
 
 ### Available Operations
 
-- `init` - Initialize a new feature specification
-- `check` - Check current workflow status
-- `confirm` - Confirm stage completion
-- `skip` - Skip current stage
-- `complete_task` - Mark tasks as completed
+- `sc_init` - Initialize a new feature specification
+- `sc_plan` - Progress the workflow to the next state
+- `sc_status` - Get current workflow status and next steps
+- `sc_todo_list` - List all implementation tasks
+- `sc_todo_start` - Mark a task as actively being worked on
+- `sc_todo_complete` - Mark tasks as completed
+- `sc_epoch` - Update context for short-term memory
+- `sc_mode` - Toggle between one-shot and step-through modes
+- `sc_archive` - Manually move project to completed directory
+- `sc_verify` - Validate the last action worked
+- `sc_help` - Show help documentation
 
 ## Documentation
 

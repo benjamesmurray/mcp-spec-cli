@@ -52,6 +52,182 @@ export function registerSpecTools(server: McpServer): void {
   );
 
   server.registerTool(
+    'sc_init',
+    {
+      description: 'Initialize a new feature specification.',
+      inputSchema: {
+        name: z.string().describe('Feature name'),
+        description: z.string().optional().describe('Optional feature description'),
+        mode: z.enum(['one-shot', 'step-through']).optional().describe('Workflow mode (default: step-through)')
+      }
+    },
+    async (args) => {
+      try {
+        const cliArgs = ['exec', 'init', '--name', args.name];
+        if (args.description) cliArgs.push('--description', args.description);
+        if (args.mode) cliArgs.push('--mode', args.mode);
+        const result = await runCli(cliArgs);
+        return { content: [{ type: 'text', text: result }] };
+      } catch (error: any) {
+        return { content: [{ type: 'text', text: `Error: ${error.message}` }], isError: true };
+      }
+    }
+  );
+
+  server.registerTool(
+    'sc_plan',
+    {
+      description: 'Progress the workflow state (e.g., Requirements -> Design). Automatically archives when finished.',
+      inputSchema: {
+        feature: z.string().optional().describe('Feature name (optional)'),
+        instruction: z.string().optional().describe('Specific instructions or updates for the next phase')
+      }
+    },
+    async (args) => {
+      try {
+        const cliArgs = ['exec', 'plan'];
+        if (args.feature) cliArgs.push('--feature', args.feature);
+        if (args.instruction) cliArgs.push('--instruction', args.instruction);
+        const result = await runCli(cliArgs);
+        return { content: [{ type: 'text', text: result }] };
+      } catch (error: any) {
+        return { content: [{ type: 'text', text: `Error: ${error.message}` }], isError: true };
+      }
+    }
+  );
+
+  server.registerTool(
+    'sc_todo_list',
+    {
+      description: 'List all implementation tasks and their status.',
+      inputSchema: {
+        feature: z.string().optional().describe('Feature name (optional)')
+      }
+    },
+    async (args) => {
+      try {
+        const cliArgs = ['exec', 'todo', 'list'];
+        if (args.feature) cliArgs.push('--feature', args.feature);
+        const result = await runCli(cliArgs);
+        return { content: [{ type: 'text', text: result }] };
+      } catch (error: any) {
+        return { content: [{ type: 'text', text: `Error: ${error.message}` }], isError: true };
+      }
+    }
+  );
+
+  server.registerTool(
+    'sc_todo_start',
+    {
+      description: 'Mark a task as being actively worked on.',
+      inputSchema: {
+        id: z.string().describe('Task ID (e.g., "1.1")'),
+        feature: z.string().optional().describe('Feature name (optional)')
+      }
+    },
+    async (args) => {
+      try {
+        const cliArgs = ['exec', 'todo', 'start', '--id', args.id];
+        if (args.feature) cliArgs.push('--feature', args.feature);
+        const result = await runCli(cliArgs);
+        return { content: [{ type: 'text', text: result }] };
+      } catch (error: any) {
+        return { content: [{ type: 'text', text: `Error: ${error.message}` }], isError: true };
+      }
+    }
+  );
+
+  server.registerTool(
+    'sc_todo_complete',
+    {
+      description: 'Mark a task as completed.',
+      inputSchema: {
+        id: z.string().describe('Task ID (e.g., "1.1")'),
+        feature: z.string().optional().describe('Feature name (optional)')
+      }
+    },
+    async (args) => {
+      try {
+        const cliArgs = ['exec', 'todo', 'complete', '--id', args.id];
+        if (args.feature) cliArgs.push('--feature', args.feature);
+        const result = await runCli(cliArgs);
+        return { content: [{ type: 'text', text: result }] };
+      } catch (error: any) {
+        return { content: [{ type: 'text', text: `Error: ${error.message}` }], isError: true };
+      }
+    }
+  );
+
+  server.registerTool(
+    'sc_epoch',
+    {
+      description: 'Update the task-epoch context (focus, intentions, hypotheses, questions).',
+      inputSchema: {
+        feature: z.string().optional().describe('Feature name (optional)'),
+        focus: z.string().optional().describe('Active focus'),
+        intentions: z.string().optional().describe('Pending intentions'),
+        hypotheses: z.string().optional().describe('Active hypotheses'),
+        openQuestions: z.string().optional().describe('Open questions / uncertainties')
+      }
+    },
+    async (args) => {
+      try {
+        const cliArgs = ['exec', 'epoch'];
+        if (args.feature) cliArgs.push('--feature', args.feature);
+        if (args.focus) cliArgs.push('--focus', args.focus);
+        if (args.intentions) cliArgs.push('--intentions', args.intentions);
+        if (args.hypotheses) cliArgs.push('--hypotheses', args.hypotheses);
+        if (args.openQuestions) cliArgs.push('--openQuestions', args.openQuestions);
+        const result = await runCli(cliArgs);
+        return { content: [{ type: 'text', text: result }] };
+      } catch (error: any) {
+        return { content: [{ type: 'text', text: `Error: ${error.message}` }], isError: true };
+      }
+    }
+  );
+
+  server.registerTool(
+    'sc_archive',
+    {
+      description: 'Manually move the project to the completed directory.',
+      inputSchema: {
+        feature: z.string().optional().describe('Feature name (optional)')
+      }
+    },
+    async (args) => {
+      try {
+        const cliArgs = ['exec', 'archive'];
+        if (args.feature) cliArgs.push('--feature', args.feature);
+        const result = await runCli(cliArgs);
+        return { content: [{ type: 'text', text: result }] };
+      } catch (error: any) {
+        return { content: [{ type: 'text', text: `Error: ${error.message}` }], isError: true };
+      }
+    }
+  );
+
+  server.registerTool(
+    'sc_mode',
+    {
+      description: 'Toggle project mode between one-shot and step-through.',
+      inputSchema: {
+        mode: z.enum(['one-shot', 'step-through']).describe('Workflow mode'),
+        feature: z.string().optional().describe('Feature name (optional)')
+      }
+    },
+    async (args) => {
+      try {
+        const cliArgs = ['exec', 'mode', args.mode];
+        if (args.feature) cliArgs.push('--feature', args.feature);
+        const result = await runCli(cliArgs);
+        return { content: [{ type: 'text', text: result }] };
+      } catch (error: any) {
+        return { content: [{ type: 'text', text: `Error: ${error.message}` }], isError: true };
+      }
+    }
+  );
+
+  server.registerTool(
     'sc_help',
     {
       description: 'Learn how to use the CLI tools and get deep documentation.',
@@ -63,35 +239,6 @@ export function registerSpecTools(server: McpServer): void {
       try {
         const cliArgs = ['help'];
         if (args.topic) cliArgs.push(args.topic);
-        const result = await runCli(cliArgs);
-        return { content: [{ type: 'text', text: result }] };
-      } catch (error: any) {
-        return { content: [{ type: 'text', text: `Error: ${error.message}` }], isError: true };
-      }
-    }
-  );
-
-  server.registerTool(
-    'sc_exec',
-    {
-      description: 'The primary workhorse tool. Run `sc_help` for usage details.',
-      inputSchema: {
-        action: z.enum(['init', 'plan', 'todo', 'epoch']).describe('The action to perform'),
-        resource: z.string().optional().describe('The resource to act upon (e.g. "list", "start") for todo'),
-        flags: z.record(z.string()).optional().describe('Key-value pairs for flags (e.g. {"feature": "auth", "id": "1", "focus": "update tests"})')
-      }
-    },
-    async (args) => {
-      try {
-        const cliArgs = ['exec', args.action];
-        if (args.resource) cliArgs.push(args.resource);
-        
-        if (args.flags) {
-            for (const [k, v] of Object.entries(args.flags)) {
-                cliArgs.push(`--${k}`, String(v));
-            }
-        }
-        
         const result = await runCli(cliArgs);
         return { content: [{ type: 'text', text: result }] };
       } catch (error: any) {

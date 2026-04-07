@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-import { existsSync, mkdirSync, writeFileSync, readFileSync } from 'fs';
-import { join } from 'path';
+import { existsSync, mkdirSync, writeFileSync, readFileSync, renameSync, cpSync, rmSync } from 'fs';
+import { join, basename, dirname } from 'path';
 import { parseArgs } from 'util';
 import { SpecManager } from './features/shared/SpecManager.js';
 import { TemplateRepository } from './features/shared/templateRepository.js';
@@ -22,6 +22,7 @@ const { positionals, values } = parseArgs({
     intentions: { type: 'string' },
     hypotheses: { type: 'string' },
     openQuestions: { type: 'string' },
+    mode: { type: 'string' },
     help: { type: 'boolean' }
   },
   allowPositionals: true
@@ -30,6 +31,38 @@ const { positionals, values } = parseArgs({
 const command = positionals[0];
 const subcommand = positionals[1];
 
+function archiveProject(baseDir: string, featureName?: string): string {
+  const currentPath = SpecManager.resolveFeaturePath(baseDir, featureName);
+  const targetDir = join(baseDir, 'projects', 'completed');
+  
+  if (currentPath.includes(targetDir)) {
+    return 'Project is already in the completed directory.';
+  }
+
+  if (!existsSync(targetDir)) {
+    mkdirSync(targetDir, { recursive: true });
+  }
+
+  const featureDirName = basename(currentPath);
+  const targetPath = join(targetDir, featureDirName);
+
+  try {
+    renameSync(currentPath, targetPath);
+  } catch (err: any) {
+    if (err.code === 'EXDEV') {
+      // Handle cross-device moves if necessary
+      cpSync(currentPath, targetPath, { recursive: true });
+      rmSync(currentPath, { recursive: true, force: true });
+    } else {
+      throw err;
+    }
+  }
+
+  // Update .spec_last_used with new relative path
+  writeFileSync(join(baseDir, '.spec_last_used'), join('projects', 'completed', featureDirName), 'utf-8');
+  return `Successfully archived project to ${join('projects', 'completed', featureDirName)}.`;
+}
+
 async function main() {
   let output = '';
 
@@ -37,16 +70,34 @@ async function main() {
     const baseDir = process.cwd();
 
     if (command === 'help' || values.help) {
-      output = `
+      if (subcommand === 'exec') {
+        output = `
+Usage: spec-cli exec <subcommand> [options]
+
+Subcommands:
+  init          Initialize a new feature in 'projects/active/'.
+                Options: --name <name>, --description <text>, --mode <one-shot|step-through>
+  plan          Progress the workflow to the next state (e.g., Requirements -> Design).
+                Automatically archives to 'projects/completed/' upon completion.
+                Options: --feature <name>, --instruction <text>
+  todo <action> Manage implementation tasks.
+                Actions: list, start, complete
+                Options: --feature <name>, --id <task_id> (for start/complete)
+  epoch         Update context for short-term memory (focus, intentions, hypotheses, questions).
+                Options: --feature <name>, --focus <text>, --intentions <text>, --hypotheses <text>, --openQuestions <text>
+  archive       Manually move the project to the 'projects/completed/' directory.
+                Options: --feature <name>
+  mode <mode>   Toggle between 'one-shot' and 'step-through' modes.
+                Options: --feature <name>
+`;
+      } else {
+        output = `
 Usage: spec-cli <command> [subcommand] [options]
 
 Commands:
   status                   Get a health check of the active project
-  help [topic]             Show help documentation
-  exec init                Initialize a new feature
-  exec plan                Progress the workflow state
-  exec todo <action>       Manage tasks (list, start, complete)
-  exec epoch               Update the epoch context
+  help [topic]             Show help documentation (e.g. 'help exec')
+  exec <subcommand>        Perform an action (init, plan, todo, epoch, archive, mode)
   verify                   Verify current state
 
 Options:
@@ -59,7 +110,9 @@ Options:
   --intentions <text>      Pending intentions (for epoch)
   --hypotheses <text>      Active hypotheses (for epoch)
   --openQuestions <text>   Open questions (for epoch)
+  --mode <mode>            Operation mode: 'one-shot' or 'step-through' (for init)
 `;
+      }
       console.log(output);
       Logger.logCommand(process.argv.slice(2).join(' '), [], output);
       return;
@@ -78,13 +131,15 @@ Options:
         const featureName = values.name || values.feature;
         if (!featureName) throw new Error('--name or --feature is required for init');
         
-        const featurePath = join(baseDir, featureName);
+        const featurePath = SpecManager.resolveFeaturePath(baseDir, featureName);
         if (!existsSync(featurePath)) {
           mkdirSync(featurePath, { recursive: true });
         }
         
-        SpecManager.resolveFeaturePath(baseDir, featureName);
-        
+        if (values.mode === 'one-shot' || values.mode === 'step-through') {
+          SpecManager.setMode(featurePath, values.mode as 'one-shot' | 'step-through');
+        }
+
         const reqPath = join(featurePath, WorkflowStateRepository.getStageFileName('requirements'));
         if (!existsSync(reqPath)) {
           const content = TemplateRepository.getInterpolatedTemplate('requirements', { 
@@ -98,6 +153,16 @@ Options:
         output = SpecManager.getStatusSummary(baseDir, featureName);
         console.log(output);
       } 
+      else if (subcommand === 'mode') {
+        const featurePath = SpecManager.resolveFeaturePath(baseDir, values.feature);
+        const mode = positionals[2] || values.mode;
+        if (mode !== 'one-shot' && mode !== 'step-through') {
+            throw new Error('Mode must be either "one-shot" or "step-through"');
+        }
+        SpecManager.setMode(featurePath, mode);
+        output = `Mode updated successfully to ${mode}.\n\n${SpecManager.getStatusSummary(baseDir, values.feature)}`;
+        console.log(output);
+      }
       else if (subcommand === 'plan') {
         const featurePath = SpecManager.resolveFeaturePath(baseDir, values.feature);
         const state = SpecManager.getWorkflowState(featurePath);
@@ -170,10 +235,17 @@ Options:
                 if (values.instruction) message += `\n> Reminder instruction: ${values.instruction}`;
             } else {
                 message = 'Workflow is completely finished.';
+                const archiveResult = archiveProject(baseDir, values.feature);
+                message += `\n\n${archiveResult}`;
             }
         }
 
         output = `${message}\n\n${SpecManager.getStatusSummary(baseDir, values.feature)}`;
+        console.log(output);
+      }
+      else if (subcommand === 'archive') {
+        const result = archiveProject(baseDir, values.feature);
+        output = `${result}\n\n${SpecManager.getStatusSummary(baseDir, values.feature)}`;
         console.log(output);
       }
       else if (subcommand === 'todo') {

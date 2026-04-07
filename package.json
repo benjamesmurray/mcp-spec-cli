@@ -1,6 +1,6 @@
 {
   "name": "mcp-spec-cli",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "description": "MCP server for managing spec workflow (requirements, design, implementation)",
   "type": "module",
   "main": "dist/index.js",

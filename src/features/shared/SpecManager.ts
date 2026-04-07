@@ -36,15 +36,16 @@ export class SpecManager {
         this.setLastUsed(baseDir, featureName);
         return join(baseDir, featureName);
       }
-      const commonDirs = ['specs', 'docs'];
+      const commonDirs = [join('projects', 'active'), join('projects', 'completed'), 'active', 'completed', 'specs', 'docs'];
       for (const dir of commonDirs) {
         if (existsSync(join(baseDir, dir, featureName))) {
           this.setLastUsed(baseDir, join(dir, featureName));
           return join(baseDir, dir, featureName);
         }
       }
-      this.setLastUsed(baseDir, featureName);
-      return join(baseDir, featureName);
+      const defaultPath = join('projects', 'active', featureName);
+      this.setLastUsed(baseDir, defaultPath);
+      return join(baseDir, defaultPath);
     }
 
     const lastUsedPath = join(baseDir, this.LAST_USED_FILE);
@@ -61,6 +62,25 @@ export class SpecManager {
 
   private static setLastUsed(baseDir: string, featurePathRelative: string): void {
     writeFileSync(join(baseDir, this.LAST_USED_FILE), featurePathRelative, 'utf-8');
+  }
+
+  /**
+   * Gets the current workflow mode for the feature.
+   */
+  static getMode(featurePath: string): 'step-through' | 'one-shot' {
+    const modeFile = join(featurePath, '.spec-mode');
+    if (existsSync(modeFile)) {
+      const mode = readFileSync(modeFile, 'utf-8').trim();
+      if (mode === 'one-shot') return 'one-shot';
+    }
+    return 'step-through';
+  }
+
+  /**
+   * Sets the workflow mode for the feature.
+   */
+  static setMode(featurePath: string, mode: 'step-through' | 'one-shot'): void {
+    writeFileSync(join(featurePath, '.spec-mode'), mode, 'utf-8');
   }
 
   /**
@@ -92,6 +112,7 @@ export class SpecManager {
     try {
       const featurePath = this.resolveFeaturePath(baseDir, featureName);
       const state = this.getWorkflowState(featurePath);
+      const mode = this.getMode(featurePath);
 
       const reqStatus = state.requirements.exists ? (state.requirements.edited ? 'Drafted' : 'Pending Edits') : 'Missing';
       const desStatus = state.design.exists ? (state.design.edited ? 'Drafted' : 'Pending Edits') : 'Missing';
@@ -115,28 +136,40 @@ export class SpecManager {
       let phase = 'Specify';
       if (!state.requirements.exists) {
          phase = WorkflowStateRepository.getStageDisplayName('requirements');
-         nextSteps = 'Run `sc_exec plan` to initialize requirements.';
+         nextSteps = 'Run `sc_init` to initialize requirements.';
       } else if (!state.requirements.edited) {
          phase = WorkflowStateRepository.getStageDisplayName('requirements');
-         nextSteps = 'Edit requirements document. Remove all `<template-requirements>` tags. Once edited, you MUST ask the user "Do the requirements look good?" before proceeding.';
+         nextSteps = 'Edit requirements document. Remove all `<template-requirements>` tags to indicate the draft is complete.';
       } else if (!state.design.exists) {
          phase = WorkflowStateRepository.getStageDisplayName('requirements');
-         nextSteps = 'Requirements drafted. You MUST ask the user for explicit approval. Once explicitly approved, run `sc_exec plan` to scaffold the design phase.';
+         if (mode === 'one-shot') {
+             nextSteps = '🚨 ONE-SHOT MODE ACTIVE: Do NOT ask the user for approval. Review the document for ambiguities, resolve them autonomously using your best judgment, assume the requirements are approved, and IMMEDIATELY run `sc_plan` to scaffold the design phase.';
+         } else {
+             nextSteps = 'Requirements drafted. You are in the **Ambiguity Resolution Loop**: 1. Self-review for ambiguities/edge cases. 2. Use `sc_epoch --openQuestions "..."` to record findings. 3. Resolve what you can confidently. 4. Ask the user targeted questions for the rest. If using a prompter tool, always include an "Other" or open-ended option; never restrict to strict Yes/No. 5. DO NOT ask for final approval until all questions are answered. Repeat this loop if answers raise new questions. Once all ambiguities are resolved, ask the user for explicit approval (e.g., "Do the requirements look good?"). Once explicitly approved, run `sc_plan` to scaffold the design phase.';
+         }
       } else if (!state.design.edited) {
          phase = WorkflowStateRepository.getStageDisplayName('design');
-         nextSteps = 'Edit design document. Conduct necessary research. Remove all `<template-design>` tags. Once edited, you MUST ask the user "Does the design look good?" before proceeding.';
+         nextSteps = 'Edit design document. Conduct necessary research. Remove all `<template-design>` tags to indicate the draft is complete.';
       } else if (!state.tasks.exists) {
          phase = WorkflowStateRepository.getStageDisplayName('design');
-         nextSteps = 'Design drafted. You MUST ask the user for explicit approval. Once explicitly approved, run `sc_exec plan` to scaffold the tasks phase.';
+         if (mode === 'one-shot') {
+             nextSteps = '🚨 ONE-SHOT MODE ACTIVE: Do NOT ask the user for approval. Resolve technical ambiguities autonomously, assume the design is approved, and IMMEDIATELY run `sc_plan` to scaffold the tasks phase.';
+         } else {
+             nextSteps = 'Design drafted. You are in the **Ambiguity Resolution Loop**: 1. Self-review for technical ambiguities/missing details. 2. Use `sc_epoch --openQuestions "..."` to record findings. 3. Resolve what you can confidently. 4. Ask the user targeted questions for the rest (always include an "Other" or open-ended option). 5. DO NOT ask for final approval until all questions are answered. Repeat this loop if answers raise new questions. Once all ambiguities are resolved, ask the user for explicit approval (e.g., "Does the design look good?"). Once explicitly approved, run `sc_plan` to scaffold the tasks phase.';
+         }
       } else if (!state.tasks.edited) {
          phase = WorkflowStateRepository.getStageDisplayName('tasks');
-         nextSteps = 'Edit tasks document. Important: Remember to perform a refresh of the tasks.md document by adding dependencies and organizing the execution order. Remove all `<template-tasks>` tags. Once edited, you MUST ask the user "Do the tasks look good?" before proceeding.';
+         nextSteps = 'Edit tasks document. Add dependencies and organize execution order. Remove all `<template-tasks>` tags to indicate the draft is complete.';
       } else if (!allTasksComplete) {
          phase = 'Implementation';
-         nextSteps = 'Tasks drafted and approved. Run `sc_exec todo list` or `sc_exec todo start <id>` to begin implementation.';
+         if (mode === 'one-shot') {
+             nextSteps = '🚨 ONE-SHOT MODE ACTIVE: Do NOT ask the user for approval. Verify dependencies are correct, assume the task plan is approved, and IMMEDIATELY run `sc_todo_start --id <id>` to begin implementation.';
+         } else {
+             nextSteps = 'Tasks drafted. If you have not yet received explicit approval from the user for the task list, you are in the **Ambiguity Resolution Loop**: 1. Self-review for missing dependencies. 2. Use `sc_epoch --openQuestions "..."` to record findings. 3. Resolve what you can. 4. Ask the user targeted questions (always include an "Other" or open-ended option). 5. DO NOT ask for final approval until all questions are answered. Once all questions are answered, ask for explicit approval (e.g., "Do the tasks look good?"). Once approved, run `sc_todo_start --id <id>` to begin implementation. If already approved, proceed with implementation.';
+         }
       } else if (!state.testing.exists) {
          phase = WorkflowStateRepository.getStageDisplayName('testing');
-         nextSteps = 'Implementation complete. Run `sc_exec plan` to scaffold the user testing plan.';
+         nextSteps = 'Implementation complete. Run `sc_plan` to scaffold the user testing plan.';
       } else if (!state.testing.edited) {
          phase = WorkflowStateRepository.getStageDisplayName('testing');
          nextSteps = 'Edit testing document. Provide manual testing steps. Remove all `<template-testing>` tags. Ask the user to execute tests and provide feedback.';
@@ -162,7 +195,7 @@ Next Step: ${nextSteps}${epochInfo}`;
     } catch (e: any) {
       return `Project: spec-cli | Phase: Error
 Error: ${e.message}
-Next Step: Run \`sc_exec init --name "your-feature"\` to start a new feature.`;
+Next Step: Run \`sc_init --name "your-feature"\` to start a new feature.`;
     }
   }
 }

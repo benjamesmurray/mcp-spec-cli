@@ -41,19 +41,16 @@ describe('Epoch Context Integration', () => {
     const reqFile = WorkflowStateRepository.getStageFileName('requirements');
 
     // 1. Initialize feature - should create epoch file
-    await tools['sc_exec'].callback({ action: 'init', flags: { name: featureName } }, {});
-    const epochPath = join(tempDir, featureName, epochFile);
+    await tools['sc_init'].callback({ name: featureName }, {});
+    const epochPath = join(tempDir, 'projects', 'active', featureName, epochFile);
     expect(existsSync(epochPath)).toBe(true);
     expect(readFileSync(epochPath, 'utf-8')).toContain('**Current Phase:** Requirements');
 
     // 2. Update epoch context via tool
-    await tools['sc_exec'].callback({ 
-      action: 'epoch', 
-      flags: { 
-        feature: featureName, 
-        focus: 'Initial research',
-        intentions: 'Write requirements'
-      } 
+    await tools['sc_epoch'].callback({ 
+      feature: featureName, 
+      focus: 'Initial research',
+      intentions: 'Write requirements'
     }, {});
     
     let content = readFileSync(epochPath, 'utf-8');
@@ -66,12 +63,9 @@ describe('Epoch Context Integration', () => {
     expect(statusRes.content[0].text).toContain('Initial research');
 
     // 4. Surgical update - change focus only
-    await tools['sc_exec'].callback({ 
-      action: 'epoch', 
-      flags: { 
-        feature: featureName, 
-        focus: 'Updated focus'
-      } 
+    await tools['sc_epoch'].callback({ 
+      feature: featureName, 
+      focus: 'Updated focus'
     }, {});
     
     content = readFileSync(epochPath, 'utf-8');
@@ -80,9 +74,9 @@ describe('Epoch Context Integration', () => {
 
     // 5. Advance phase - should reset epoch context
     // First finish requirements
-    writeFileSync(join(tempDir, featureName, reqFile), '# Requirements\nDone.', 'utf-8');
+    writeFileSync(join(tempDir, 'projects', 'active', featureName, reqFile), '# Requirements\nDone.', 'utf-8');
     
-    await tools['sc_exec'].callback({ action: 'plan', flags: { feature: featureName } }, {});
+    await tools['sc_plan'].callback({ feature: featureName }, {});
     
     content = readFileSync(epochPath, 'utf-8');
     expect(content).toContain('**Current Phase:** Design');
