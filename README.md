@@ -24,12 +24,45 @@ The traditional approach to AI coding often leads to scope creep and forgotten r
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Requirements: sc_exec init
-    Requirements --> Design: sc_exec plan (resolve ambiguities & approve)
-    Design --> Tasks: sc_exec plan (resolve ambiguities & approve)
-    Tasks  --> Implementation: sc_exec todo (add dependencies, annotate tasks from design, & approve)
-    Implementation --> [*]: (start/complete) 
-    All tasks completed
+    direction TB
+
+    state "Phase 1: Requirements" as REQ {
+        [*] --> InitReq: sc_exec init
+        InitReq --> EditReq: AI Drafts & Updates
+        EditReq --> CheckUncertainty: Update Epoch Context
+        CheckUncertainty --> AskUser: "Does this look good?"
+        AskUser --> ConfirmReq: User Approves
+        ConfirmReq --> [*]: sc_exec plan
+    }
+
+    state "Phase 2: Design" as DES {
+        [*] --> ScaffoldDes: Reset Epoch Context
+        ScaffoldDes --> Research: AI Research & Drafts
+        Research --> CheckUncertaintyDes: Update Epoch Context
+        CheckUncertaintyDes --> AskUserDes: "Does this look good?"
+        AskUserDes --> ConfirmDes: User Approves
+        ConfirmDes --> [*]: sc_exec plan
+    }
+
+    state "Phase 4: Implementation Planning" as TSK {
+        [*] --> ScaffoldTasks: Reset Epoch Context
+        ScaffoldTasks --> RefreshTasks: Add Dependencies & Refs
+        RefreshTasks --> AskUserTasks: "Does this look good?"
+        AskUserTasks --> ConfirmTasks: User Approves
+        ConfirmTasks --> [*]: sc_exec plan
+    }
+
+    state "Phase 5: Implementation" as IMP {
+        [*] --> StartTask: sc_exec todo start
+        StartTask --> Work: Coding & Epoch Updates
+        Work --> CompleteTask: sc_exec todo complete
+        CompleteTask --> [*]: All Tasks [x]
+    }
+
+    REQ --> DES
+    DES --> TSK
+    TSK --> IMP
+    IMP --> [*]: Feature Delivered
 ```
 
 ## The 4 Semantic Tools
