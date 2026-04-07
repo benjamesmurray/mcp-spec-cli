@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { existsSync, mkdirSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, writeFileSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { parseArgs } from 'util';
 import { SpecManager } from './features/shared/SpecManager.js';
@@ -16,6 +16,10 @@ const { positionals, values } = parseArgs({
     name: { type: 'string' },
     description: { type: 'string' },
     id: { type: 'string' },
+    focus: { type: 'string' },
+    intentions: { type: 'string' },
+    hypotheses: { type: 'string' },
+    openQuestions: { type: 'string' },
     help: { type: 'boolean' }
   },
   allowPositionals: true
@@ -81,6 +85,7 @@ Options:
             introduction: values.description || 'Initial requirements' 
           });
           writeFileSync(reqPath, content, 'utf-8');
+          writeFileSync(join(featurePath, '.epoch-context.md'), `# Epoch Context\n\n**Current Phase:** Requirements\n\n`, 'utf-8');
         }
 
         output = SpecManager.getStatusSummary(baseDir, featureName);
@@ -107,7 +112,8 @@ Options:
             });
             if (values.instruction) content += `\n\n> **Guidance:** ${values.instruction}`;
             writeFileSync(join(featurePath, WorkflowStateRepository.getStageFileName('design')), content, 'utf-8');
-            message = `Requirements complete. Scaffolding ${WorkflowStateRepository.getStageFileName('design')}.`;
+            writeFileSync(join(featurePath, '.epoch-context.md'), `# Epoch Context\n\n**Current Phase:** Design\n\n`, 'utf-8');
+            message = `Requirements complete. Scaffolding ${WorkflowStateRepository.getStageFileName('design')}. Epoch context reset.`;
         } else if (!state.design.edited) {
             message = `Please finish editing ${WorkflowStateRepository.getStageFileName('design')} (remove all <template> tags) before advancing.`;
             if (values.instruction) message += `\n> Reminder instruction: ${values.instruction}`;
@@ -117,7 +123,8 @@ Options:
             });
             if (values.instruction) content += `\n\n> **Guidance:** ${values.instruction}`;
             writeFileSync(join(featurePath, WorkflowStateRepository.getStageFileName('tasks')), content, 'utf-8');
-            message = `Design complete. Scaffolding ${WorkflowStateRepository.getStageFileName('tasks')}.`;
+            writeFileSync(join(featurePath, '.epoch-context.md'), `# Epoch Context\n\n**Current Phase:** Implementation Planning\n\n`, 'utf-8');
+            message = `Design complete. Scaffolding ${WorkflowStateRepository.getStageFileName('tasks')}. Epoch context reset.`;
         } else {
             message = 'All documents exist. Proceed with `exec todo`.';
             if (values.instruction) message += `\n> Received instruction: ${values.instruction}`;
@@ -141,6 +148,32 @@ Options:
              output = `Action ${action} on id ${values.id} acknowledged.\n\n${SpecManager.getStatusSummary(baseDir, values.feature)}`;
              console.log(output);
         }
+      }
+      else if (subcommand === 'epoch') {
+        const featurePath = SpecManager.resolveFeaturePath(baseDir, values.feature);
+        const epochPath = join(featurePath, '.epoch-context.md');
+        let epochContent = existsSync(epochPath) ? readFileSync(epochPath, 'utf-8') : `# Epoch Context\n\n`;
+
+        if (values.focus) {
+            epochContent = epochContent.replace(/## Active Focus[\s\S]*?(?=##|$)/, `## Active Focus\n*   ${values.focus}\n\n`);
+            if (!epochContent.includes('## Active Focus')) epochContent += `## Active Focus\n*   ${values.focus}\n\n`;
+        }
+        if (values.intentions) {
+            epochContent = epochContent.replace(/## Pending Intentions[\s\S]*?(?=##|$)/, `## Pending Intentions\n*   ${values.intentions}\n\n`);
+            if (!epochContent.includes('## Pending Intentions')) epochContent += `## Pending Intentions\n*   ${values.intentions}\n\n`;
+        }
+        if (values.hypotheses) {
+            epochContent = epochContent.replace(/## Active Hypotheses[\s\S]*?(?=##|$)/, `## Active Hypotheses\n*   ${values.hypotheses}\n\n`);
+            if (!epochContent.includes('## Active Hypotheses')) epochContent += `## Active Hypotheses\n*   ${values.hypotheses}\n\n`;
+        }
+        if (values.openQuestions) {
+            epochContent = epochContent.replace(/## Open Questions \/ Uncertainties[\s\S]*?(?=##|$)/, `## Open Questions / Uncertainties\n*   ${values.openQuestions}\n\n`);
+            if (!epochContent.includes('## Open Questions / Uncertainties')) epochContent += `## Open Questions / Uncertainties\n*   ${values.openQuestions}\n\n`;
+        }
+        
+        writeFileSync(epochPath, epochContent, 'utf-8');
+        output = `Epoch context updated successfully.\n\n${SpecManager.getStatusSummary(baseDir, values.feature)}`;
+        console.log(output);
       } else {
         throw new Error('Unknown exec subcommand');
       }

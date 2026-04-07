@@ -127,5 +127,19 @@ describe('SpecManager', () => {
       expect(summary).toContain('Tasks: Active');
       expect(summary).toContain('Next Step: Run `sc_exec todo list` or `sc_exec todo start <id>` to begin implementation.');
     });
+
+    it('should include epoch context in status summary if file exists', () => {
+      const featureName = 'test-feature';
+      const featurePath = join(tempDir, featureName);
+      mkdirSync(featurePath);
+      
+      const epochContent = '# Epoch Context\n\n## Active Focus\n* Working on tests';
+      writeFileSync(join(featurePath, '.epoch-context.md'), epochContent, 'utf-8');
+      
+      const summary = SpecManager.getStatusSummary(tempDir, featureName);
+      expect(summary).toContain('--- Epoch Context ---');
+      expect(summary).toContain('Active Focus');
+      expect(summary).toContain('Working on tests');
+    });
   });
 });

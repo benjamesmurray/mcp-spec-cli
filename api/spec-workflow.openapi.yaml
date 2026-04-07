@@ -54,7 +54,7 @@ components:
       properties:
         type:
           type: string
-          enum: [setup_workspace, init, check, skip, confirm, complete_task]
+          enum: [setup_workspace, init, check, skip, confirm, complete_task, update_epoch]
           description: |
             Operation type to perform:
 
@@ -64,6 +64,7 @@ components:
             - **skip**: Skip current stage
             - **confirm**: Confirm current stage completion
             - **complete_task**: Mark task(s) as completed
+            - **update_epoch**: Update the continuous task-epoch context
 
         introduction:
           type: string
@@ -80,6 +81,18 @@ components:
                 type: string
               description: Multiple task numbers for batch completion
           description: Task number(s) to mark as completed (required for complete_task)
+        epochFocus:
+          type: string
+          description: Brief description of the immediate goal or task being worked on right now. (used for update_epoch)
+        epochIntentions:
+          type: string
+          description: Next immediate step after the active focus, or things not to forget. (used for update_epoch)
+        epochHypotheses:
+          type: string
+          description: Active hypotheses, e.g., assumptions about architecture. (used for update_epoch)
+        epochOpenQuestions:
+          type: string
+          description: Questions pending user feedback. (used for update_epoch)
       
     # Response definitions
     WorkflowResponse:
@@ -94,6 +107,7 @@ components:
             - $ref: '#/components/schemas/SkipResponse'
             - $ref: '#/components/schemas/ConfirmResponse'
             - $ref: '#/components/schemas/BatchCompleteTaskResponse'
+            - $ref: '#/components/schemas/UpdateEpochResponse'
 
     # Project initialization response
     ProjectInitResponse:
@@ -812,6 +826,18 @@ components:
             
             Model: Please ask user to resolve these issues and try again.
 
+    # Update epoch response
+    UpdateEpochResponse:
+      type: object
+      required: [success, displayText]
+      properties:
+        success:
+          type: boolean
+          description: Whether the epoch update was successful
+        displayText:
+          type: string
+          description: Human-readable message about the update
+
     # Common type definitions
     Stage:
       type: string
@@ -1074,6 +1100,7 @@ x-shared-resources:
       
       **Constraints:**
       
+      - The model MUST use the specs-workflow tool with update_epoch action to continuously maintain the short-term memory of its current focus and open questions during the process
       - The model MUST write the requirements document in the user's preferred regional language
       - The model MUST edit the existing requirements.md file by removing the SPEC-MARKER comment block
       - The model MUST fill in the requirements document based on the user's rough idea WITHOUT asking sequential questions first
@@ -1106,7 +1133,8 @@ x-shared-resources:
       The design document should be based on the requirements document, so ensure it exists first.
       
       **Constraints:**
-      
+
+      - The model MUST use the specs-workflow tool with update_epoch action to continuously maintain the short-term memory of its current focus, hypotheses, and open questions during the process
       - The model MUST write the design document in the user's preferred regional language
       - The model MUST edit the existing design.md file by removing the SPEC-MARKER comment block
       - The model MUST identify areas where research is needed based on the feature requirements
@@ -1148,7 +1176,8 @@ x-shared-resources:
       The tasks document should be based on the design document, so ensure it exists first.
       
       **Constraints:**
-      
+
+      - The model MUST use the specs-workflow tool with update_epoch action to continuously maintain the short-term memory of its current focus and intentions during the process
       - The model MUST write the tasks document in the user's preferred regional language
       - The model MUST edit the existing tasks.md file by removing the SPEC-MARKER comment block
       - The model MUST return to the design step if the user indicates any changes are needed to the design

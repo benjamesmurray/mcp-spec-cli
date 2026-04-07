@@ -103,12 +103,19 @@ export class SpecManager {
          nextSteps = 'Run `sc_exec todo list` or `sc_exec todo start <id>` to begin implementation.';
       }
 
+      let epochInfo = '';
+      const epochPath = join(featurePath, '.epoch-context.md');
+      if (existsSync(epochPath)) {
+          const epochContent = readFileSync(epochPath, 'utf-8');
+          epochInfo = `\n\n--- Epoch Context ---\n${epochContent.trim()}`;
+      }
+
       return `Project: spec-cli | Phase: ${phase}
 Feature: ${featurePath.replace(baseDir, '').replace(/^[\/\\]/, '')}
 Requirements: ${reqStatus}
 Design: ${desStatus}
 Tasks: ${tskStatus}
-Next Step: ${nextSteps}`;
+Next Step: ${nextSteps}${epochInfo}`;
     } catch (e: any) {
       return `Project: spec-cli | Phase: Error
 Error: ${e.message}
