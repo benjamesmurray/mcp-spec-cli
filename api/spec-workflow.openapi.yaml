@@ -448,7 +448,7 @@ components:
             Model please continue with the following actions:
             1. Read the task writing guide below
             2. First read ${path}/tasks.md, then start writing the document
-            3. Once the tasks are documented, do a refresh of the tasks.md document by adding dependencies between the tasks, structuring the tasks into a sensible order of execution, and annotating the tasks with information from the requirements and the design docs.
+            3. Once the tasks are documented, do a refresh of the tasks.md document by annotating the tasks with information from the design docs, adding details of the files that are likely to be edited or added (using the project map to see what those are), identifying dependencies, and structuring the tasks into a sensible order of execution.
             4. After completing the refresh, use sc_status to check the document status
             5. When check passes, the model must ask the user "Does the task plan look good?", and continue after getting explicit approval
             6. When the user approves, the model must use the sc_plan tool to complete the workflow
@@ -667,7 +667,7 @@ components:
             Model please continue with the following actions:
             1. Read the task writing guide below
             2. First read ${path}/tasks.md, then start writing the document
-            3. Once the tasks are documented, do a refresh of the tasks.md document by adding dependencies between the tasks, structuring the tasks into a sensible order of execution, and annotating the tasks with information from the requirements and the design docs.
+            3. Once the tasks are documented, do a refresh of the tasks.md document by annotating the tasks with information from the design docs, adding details of the files that are likely to be edited or added (using the project map to see what those are), identifying dependencies, and structuring the tasks into a sensible order of execution.
             4. After completing the refresh, use sc_status to check the document status
             5. When check passes, the model must ask the user "Does the task plan look good?", and continue after getting explicit approval
             6. When the user approves, the model must use the sc_plan tool to complete the workflow
@@ -1198,6 +1198,8 @@ x-shared-resources:
         - Simple structure is preferred
       - The model MUST ensure each task item includes:
         - A clear objective as the task description that involves writing, modifying, or testing code
+        - Details of the files that are likely to be edited or added (use the project map to identify these)
+        - Dependencies on other tasks to establish a sensible order of execution
         - Additional information as sub-bullets under the task
         - Specific references to requirements from the requirements document (referencing granular sub-requirements, not just user stories)
       - The model MUST ensure that the implementation plan is a series of discrete, manageable coding steps
@@ -1340,7 +1342,7 @@ x-document-templates:
     title: "${featureName} - Task List"
     sections:
       - name: "Implementation Tasks"
-        placeholder: "## Implementation Tasks\n\n<template-tasks>\n- [ ] 1. **Main Task 1**\n    - [ ] 1.1. Subtask description\n        - *Goal*: Describe what this task aims to achieve\n        - *Details*: Implementation details and considerations\n        - *Requirements*: Reference to requirement numbers\n    - [ ] 1.2. Subtask description\n        - *Goal*: Describe what this task aims to achieve\n        - *Details*: Implementation details and considerations\n        - *Requirements*: Reference to requirement numbers\n- [ ] 2. **Main Task 2**\n    - [ ] 2.1. Subtask description\n        - *Goal*: Describe what this task aims to achieve\n        - *Details*: Implementation details and considerations\n        - *Requirements*: Reference to requirement numbers\n</template-tasks>"
+        placeholder: "## Implementation Tasks\n\n<template-tasks>\n- [ ] 1. **Main Task 1**\n    - [ ] 1.1. Subtask description\n        - *Goal*: Describe what this task aims to achieve\n        - *Files*: Files to be edited or created\n        - *Dependencies*: Other tasks this depends on\n        - *Details*: Implementation details and considerations\n        - *Requirements*: Reference to requirement numbers\n    - [ ] 1.2. Subtask description\n        - *Goal*: Describe what this task aims to achieve\n        - *Files*: Files to be edited or created\n        - *Dependencies*: Other tasks this depends on\n        - *Details*: Implementation details and considerations\n        - *Requirements*: Reference to requirement numbers\n- [ ] 2. **Main Task 2**\n    - [ ] 2.1. Subtask description\n        - *Goal*: Describe what this task aims to achieve\n        - *Files*: Files to be edited or created\n        - *Dependencies*: Other tasks this depends on\n        - *Details*: Implementation details and considerations\n        - *Requirements*: Reference to requirement numbers\n</template-tasks>"
       - name: "Task Dependencies"
         placeholder: "## Task Dependencies\n\n<template-tasks>\n- Task 1 must be completed before Task 2\n- Tasks 2.1 and 2.2 can be executed in parallel\n- Task 3 depends on completion of Tasks 1 and 2\n</template-tasks>"
       - name: "Estimated Timeline"
