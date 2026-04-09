@@ -123,7 +123,7 @@ describe('SpecManager', () => {
       
       const summary = SpecManager.getStatusSummary(tempDir, featureName);
       expect(summary).toContain('Requirements: Drafted');
-      expect(summary).toContain('🚨 ONE-SHOT MODE ACTIVE: Do NOT ask the user for approval.');
+      expect(summary).toContain('🚨 ONE-SHOT MODE ACTIVE: You are in the **Autonomous Ambiguity Resolution Loop**');
       expect(summary).toContain('IMMEDIATELY run `sc_plan`');
     });
     
@@ -141,6 +141,23 @@ describe('SpecManager', () => {
       expect(summary).toContain('Design: Drafted');
       expect(summary).toContain('Tasks: Active');
       expect(summary).toContain('Next Step: Tasks drafted. If you have not yet received explicit approval');
+    });
+
+    it('should return one-shot specific instructions for testing phase', () => {
+      const featureName = 'test-feature';
+      const featurePath = join(tempDir, 'projects', 'active', featureName);
+      mkdirSync(featurePath, { recursive: true });
+      SpecManager.setMode(featurePath, 'one-shot');
+      
+      writeFileSync(join(featurePath, WorkflowStateRepository.getStageFileName('requirements')), 'Req', 'utf-8');
+      writeFileSync(join(featurePath, WorkflowStateRepository.getStageFileName('design')), 'Des', 'utf-8');
+      writeFileSync(join(featurePath, WorkflowStateRepository.getStageFileName('tasks')), '- [x] 1.1 Done', 'utf-8');
+      writeFileSync(join(featurePath, WorkflowStateRepository.getStageFileName('testing')), '<template-testing>placeholder</template-testing>', 'utf-8');
+      
+      const summary = SpecManager.getStatusSummary(tempDir, featureName);
+      expect(summary).toContain('Testing: Pending Edits');
+      expect(summary).toContain('🚨 ONE-SHOT MODE ACTIVE: 1. Draft the testing document');
+      expect(summary).toContain('2. Implement and execute automated tests');
     });
 
     it('should include epoch context in status summary if file exists', () => {

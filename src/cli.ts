@@ -226,12 +226,17 @@ Options:
                 });
                 if (values.instruction) content += `\n\n> **Guidance:** ${values.instruction}`;
                 writeFileSync(join(featurePath, WorkflowStateRepository.getStageFileName('testing')), content, 'utf-8');
-                writeFileSync(join(featurePath, '.epoch-context.md'), `# Epoch Context\n\n**Current Phase:** User Testing\n\n`, 'utf-8');
+                writeFileSync(join(featurePath, '.epoch-context.md'), `# Epoch Context\n\n**Current Phase:** Testing & Verification\n\n`, 'utf-8');
                 message = `Implementation complete. Scaffolding ${WorkflowStateRepository.getStageFileName('testing')}. Epoch context reset.`;
                 const guide = openApiLoader.getSharedResourceText('testing-guide');
                 if (guide) message += `\n\n--- Guide ---\n${guide}`;
             } else if (!state.testing.edited) {
-                message = `Please finish editing ${WorkflowStateRepository.getStageFileName('testing')} (remove all <template> tags) and wait for user feedback before advancing.`;
+                const mode = SpecManager.getMode(featurePath);
+                if (mode === 'one-shot') {
+                    message = `Please finish editing ${WorkflowStateRepository.getStageFileName('testing')} (remove all <template> tags) and execute automated tests before advancing.`;
+                } else {
+                    message = `Please finish editing ${WorkflowStateRepository.getStageFileName('testing')} (remove all <template> tags) and wait for user feedback before advancing.`;
+                }
                 if (values.instruction) message += `\n> Reminder instruction: ${values.instruction}`;
             } else {
                 message = 'Workflow is completely finished.';

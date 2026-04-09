@@ -14,7 +14,7 @@ The traditional approach to AI coding often leads to scope creep and forgotten r
 
 *   **State-Aware Autopilot:** The tool knows exactly what stage the project is in. The AI doesn't have to track whether it's doing "Requirements" or "Design"—it just calls `sc_plan` and the tool handles the transition automatically.
 *   **Ambiguity Resolution Loop:** Before asking for approval, the AI is instructed to perform a thorough self-review. It identifies uncertainties, resolves what it can independently, and asks targeted questions for the rest, ensuring a high-quality baseline before moving to the next phase.
-*   **One-Shot vs. Step-Through Modes:** Users can toggle between **Step-Through** (the default "Ask -> Approve -> Confirm" cycle) and **One-Shot** mode. In One-Shot mode, the AI autonomously resolves ambiguities and progresses through Requirements, Design, and Tasks without stopping for human approval until it reaches the User Testing phase.
+*   **One-Shot vs. Step-Through Modes:** Users can toggle between **Step-Through** (the default "Ask -> Approve -> Confirm" cycle) and **One-Shot** mode. In One-Shot mode, the AI follows the same rigorous process as Step-Through (including ambiguity checks and detailed task documentation) but performs them fully autonomously. It resolves ambiguities using its best judgment and progresses through all phases—including executing automated tests and archiving the project—without stopping for human approval.
 *   **Lifecycle Directory Management:** Automatically organizes work into `projects/active/` and `projects/completed/`. Once a workflow is finalized (or manually archived), the tool moves the entire feature folder to the completed directory.
 *   **Automated Guidance Injection:** Automatically injects phase-specific engineering constraints (Requirements, Design, Tasks) directly into the workflow, ensuring the AI adheres to the specified rigour.
 *   **Intelligent Task Organization:** After the initial task document is written, the tool performs a "refresh" step. It organizes tasks with clear dependencies, establishes a sensible execution order, and annotates them with cross-references to the requirements and design documents.
@@ -61,11 +61,11 @@ stateDiagram-v2
         CompleteTask --> [*]: All Tasks [x]
     }
 
-    state "Phase 5: User Testing" as TST {
+    state "Phase 5: Testing & Verification" as TST {
         [*] --> ScaffoldTest: sc_plan
-        ScaffoldTest --> ExecuteTest: User Runs Tests
-        ExecuteTest --> Feedback: Record User Feedback
-        Feedback --> ConfirmTest: Feedback Addressed
+        ScaffoldTest --> ExecuteTest: AI/User Runs Tests
+        ExecuteTest --> Feedback: Record Results/Feedback
+        Feedback --> ConfirmTest: Verification Complete
         ConfirmTest --> Archive: sc_plan (Finished)
     }
     
@@ -77,7 +77,7 @@ stateDiagram-v2
     DES --> TSK
     TSK --> IMP
     IMP --> TST
-    TST --> [*]: Feature Delivered
+    TST --> [*]: Feature Verified & Delivered
 ```
 
 ## MCP Semantic Tools

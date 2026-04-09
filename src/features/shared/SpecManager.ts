@@ -143,7 +143,7 @@ export class SpecManager {
       } else if (!state.design.exists) {
          phase = WorkflowStateRepository.getStageDisplayName('requirements');
          if (mode === 'one-shot') {
-             nextSteps = '🚨 ONE-SHOT MODE ACTIVE: Do NOT ask the user for approval. Review the document for ambiguities, resolve them autonomously using your best judgment, assume the requirements are approved, and IMMEDIATELY run `sc_plan` to scaffold the design phase.';
+             nextSteps = '🚨 ONE-SHOT MODE ACTIVE: You are in the **Autonomous Ambiguity Resolution Loop**: 1. Self-review the requirements for ambiguities or edge cases. 2. Use `sc_epoch --openQuestions "..."` to record findings. 3. Resolve all identified issues autonomously using your best judgment. 4. Ensure all open questions are answered and closed. Once all ambiguities are resolved autonomously, IMMEDIATELY run `sc_plan` to scaffold the design phase.';
          } else {
              nextSteps = 'Requirements drafted. You are in the **Ambiguity Resolution Loop**: 1. Self-review for ambiguities/edge cases. 2. Use `sc_epoch --openQuestions "..."` to record findings. 3. Resolve what you can confidently. 4. Ask the user targeted questions for the rest. If using a prompter tool, always include an "Other" or open-ended option; never restrict to strict Yes/No. 5. DO NOT ask for final approval until all questions are answered. Repeat this loop if answers raise new questions. Once all ambiguities are resolved, ask the user for explicit approval (e.g., "Do the requirements look good?"). Once explicitly approved, run `sc_plan` to scaffold the design phase.';
          }
@@ -153,7 +153,7 @@ export class SpecManager {
       } else if (!state.tasks.exists) {
          phase = WorkflowStateRepository.getStageDisplayName('design');
          if (mode === 'one-shot') {
-             nextSteps = '🚨 ONE-SHOT MODE ACTIVE: Do NOT ask the user for approval. Resolve technical ambiguities autonomously, assume the design is approved, and IMMEDIATELY run `sc_plan` to scaffold the tasks phase.';
+             nextSteps = '🚨 ONE-SHOT MODE ACTIVE: You are in the **Autonomous Ambiguity Resolution Loop**: 1. Self-review the design for technical ambiguities or missing details. 2. Use `sc_epoch --openQuestions "..."` to record findings. 3. Resolve all identified issues autonomously using your best judgment. 4. Ensure all open questions are answered and closed. Once all ambiguities are resolved autonomously, IMMEDIATELY run `sc_plan` to scaffold the tasks phase.';
          } else {
              nextSteps = 'Design drafted. You are in the **Ambiguity Resolution Loop**: 1. Self-review for technical ambiguities/missing details. 2. Use `sc_epoch --openQuestions "..."` to record findings. 3. Resolve what you can confidently. 4. Ask the user targeted questions for the rest (always include an "Other" or open-ended option). 5. DO NOT ask for final approval until all questions are answered. Repeat this loop if answers raise new questions. Once all ambiguities are resolved, ask the user for explicit approval (e.g., "Does the design look good?"). Once explicitly approved, run `sc_plan` to scaffold the tasks phase.';
          }
@@ -163,16 +163,20 @@ export class SpecManager {
       } else if (!allTasksComplete) {
          phase = 'Implementation';
          if (mode === 'one-shot') {
-             nextSteps = '🚨 ONE-SHOT MODE ACTIVE: Do NOT ask the user for approval. Verify dependencies are correct, assume the task plan is approved, and IMMEDIATELY run `sc_todo_start --id <id>` to begin implementation.';
+             nextSteps = '🚨 ONE-SHOT MODE ACTIVE: You are in the **Autonomous Ambiguity Resolution Loop**: 1. Self-review the task list for missing dependencies or unclear steps. 2. Use `sc_epoch --openQuestions "..."` to record findings. 3. Resolve all identified issues autonomously using your best judgment. 4. Ensure the task plan is comprehensive and dependencies are correct. Once verified, IMMEDIATELY run `sc_todo_start --id <first_task_id>` to begin implementation.';
          } else {
              nextSteps = 'Tasks drafted. If you have not yet received explicit approval from the user for the task list, you are in the **Ambiguity Resolution Loop**: 1. Self-review for missing dependencies. 2. Use `sc_epoch --openQuestions "..."` to record findings. 3. Resolve what you can. 4. Ask the user targeted questions (always include an "Other" or open-ended option). 5. DO NOT ask for final approval until all questions are answered. Once all questions are answered, ask for explicit approval (e.g., "Do the tasks look good?"). Once approved, run `sc_todo_start --id <id>` to begin implementation. If already approved, proceed with implementation.';
          }
       } else if (!state.testing.exists) {
          phase = WorkflowStateRepository.getStageDisplayName('testing');
-         nextSteps = 'Implementation complete. Run `sc_plan` to scaffold the user testing plan.';
+         nextSteps = 'Implementation complete. Run `sc_plan` to scaffold the testing and verification plan.';
       } else if (!state.testing.edited) {
          phase = WorkflowStateRepository.getStageDisplayName('testing');
-         nextSteps = 'Edit testing document. Provide manual testing steps. Remove all `<template-testing>` tags. Ask the user to execute tests and provide feedback.';
+         if (mode === 'one-shot') {
+             nextSteps = '🚨 ONE-SHOT MODE ACTIVE: 1. Draft the testing document (remove all `<template-testing>` tags). 2. Implement and execute automated tests (unit, integration, or E2E) as per the plan. 3. Autonomously fix any failures. 4. Once all tests pass, IMMEDIATELY run `sc_plan` to finalize the project.';
+         } else {
+             nextSteps = 'Edit testing document. Provide manual testing steps. Remove all `<template-testing>` tags. Ask the user to execute tests and provide feedback.';
+         }
       } else {
          phase = 'Completed';
          nextSteps = 'Feature workflow is complete.';
