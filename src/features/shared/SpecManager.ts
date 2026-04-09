@@ -217,7 +217,7 @@ export class SpecManager {
       }
 
       if (isPlanningPhase) {
-          nextSteps = `🛑 STRICT MANDATE: You are in the Planning Phase. You MUST NOT write, modify, or generate any application source code yet. You must complete the Spec CLI workflow using sc_plan first.\n\n${nextSteps}`;
+          nextSteps = `🛑 STRICT MANDATE: You are in the Planning Phase. You MUST NOT write, modify, or generate any application source code yet. You must complete the Spec CLI workflow (Requirements -> Design -> Tasks) first. Use sc_plan only to progress to the next stage after the current one is finalized and approved.\n\n${nextSteps}`;
       }
 
       let epochInfo = '';
