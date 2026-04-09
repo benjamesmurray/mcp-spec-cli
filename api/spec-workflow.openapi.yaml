@@ -1101,6 +1101,7 @@ x-shared-resources:
       
       - The model MUST use the sc_epoch tool to continuously maintain the short-term memory of its current focus and open questions during the process
       - The model MUST write the requirements document in the user's preferred regional language
+      - **CRITICAL: Do NOT skip to writing application code. You must fully scaffold this markdown document and run sc_plan. This is a non-negotiable system constraint.**
       - The model MUST edit the existing requirements.md file by removing the SPEC-MARKER comment block
       - The model MUST fill in the requirements document based on the user's rough idea WITHOUT asking sequential questions first
       - The model MUST format the requirements.md document with:
@@ -1139,6 +1140,7 @@ x-shared-resources:
       **Constraints:**
 
       - The model MUST use the sc_epoch tool to continuously maintain the short-term memory of its current focus, hypotheses, and open questions during the process
+      - **CRITICAL: Do NOT skip to writing application code. You must fully scaffold this markdown document and run sc_plan. This is a non-negotiable system constraint.**
       - The model MUST write the design document in the user's preferred regional language
       - The model MUST edit the existing design.md file by removing the SPEC-MARKER comment block
       - The model MUST identify areas where research is needed based on the feature requirements
@@ -1190,6 +1192,7 @@ x-shared-resources:
       **Constraints:**
 
       - The model MUST use the sc_epoch tool to continuously maintain the short-term memory of its current focus and intentions during the process
+      - **CRITICAL: Do NOT skip to writing application code. You must fully scaffold this markdown document and run sc_plan. This is a non-negotiable system constraint.**
       - The model MUST write the tasks document in the user's preferred regional language
       - The model MUST edit the existing tasks.md file by removing the SPEC-MARKER comment block
       - The model MUST return to the design step if the user indicates any changes are needed to the design

@@ -54,7 +54,7 @@ export function registerSpecTools(server: McpServer): void {
   server.registerTool(
     'sc_init',
     {
-      description: 'Initialize a new feature specification.',
+      description: 'Initialize a new feature specification. MUST be called from the workspace root directory. Do not cd into subdirectories first.',
       inputSchema: {
         name: z.string().describe('Feature name'),
         description: z.string().optional().describe('Optional feature description'),

@@ -72,6 +72,27 @@ describe('SpecManager', () => {
     it('should throw an error if no featureName provided and .spec_last_used is missing or invalid', () => {
       expect(() => SpecManager.resolveFeaturePath(tempDir)).toThrowError(/Could not determine project context/);
     });
+
+    it('should return baseDir if basename(baseDir) matches featureName', () => {
+      const featureName = 'feature-x';
+      const featurePath = join(tempDir, featureName);
+      mkdirSync(featurePath);
+
+      const resolvedPath = SpecManager.resolveFeaturePath(featurePath, featureName);
+      expect(resolvedPath).toBe(featurePath);
+    });
+
+    it('should find project root and avoid nesting if package.json exists', () => {
+      const featureName = 'nested-feature';
+      writeFileSync(join(tempDir, 'package.json'), '{}', 'utf-8');
+      
+      const subDir = join(tempDir, 'some', 'deep', 'folder');
+      mkdirSync(subDir, { recursive: true });
+
+      const resolvedPath = SpecManager.resolveFeaturePath(subDir, featureName);
+      // It should resolve relative to tempDir (project root)
+      expect(resolvedPath).toBe(join(tempDir, 'projects', 'active', featureName));
+    });
   });
 
   describe('getWorkflowState & getStatusSummary', () => {
@@ -82,6 +103,7 @@ describe('SpecManager', () => {
       expect(summary).toContain('Requirements: Missing');
       expect(summary).toContain('Design: Missing');
       expect(summary).toContain('Tasks: Missing');
+      expect(summary).toContain('🛑 STRICT MANDATE: You are in the Planning Phase');
       expect(summary).toContain('Run `sc_init` to initialize requirements.');
     });
 
@@ -95,6 +117,7 @@ describe('SpecManager', () => {
       
       const summary = SpecManager.getStatusSummary(tempDir, featureName);
       expect(summary).toContain('Requirements: Pending Edits');
+      expect(summary).toContain('🛑 STRICT MANDATE: You are in the Planning Phase');
       expect(summary).toContain('Edit requirements document. Remove all `<template-requirements>` tags to indicate the draft is complete.');
     });
 
@@ -109,7 +132,8 @@ describe('SpecManager', () => {
       const summary = SpecManager.getStatusSummary(tempDir, featureName);
       expect(summary).toContain('Requirements: Drafted');
       expect(summary).toContain('Design: Missing');
-      expect(summary).toContain('Next Step: Requirements drafted. You are in the **Ambiguity Resolution Loop**:');
+      expect(summary).toContain('🛑 STRICT MANDATE: You are in the Planning Phase');
+      expect(summary).toContain('Requirements drafted. You are in the **Ambiguity Resolution Loop**:');
     });
 
     it('should return one-shot specific instructions when mode is one-shot', () => {
@@ -123,6 +147,7 @@ describe('SpecManager', () => {
       
       const summary = SpecManager.getStatusSummary(tempDir, featureName);
       expect(summary).toContain('Requirements: Drafted');
+      expect(summary).toContain('🛑 STRICT MANDATE: You are in the Planning Phase');
       expect(summary).toContain('🚨 ONE-SHOT MODE ACTIVE: You are in the **Autonomous Ambiguity Resolution Loop**');
       expect(summary).toContain('IMMEDIATELY run `sc_plan`');
     });

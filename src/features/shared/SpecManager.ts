@@ -1,5 +1,5 @@
 import { existsSync, readFileSync, writeFileSync } from 'fs';
-import { join, isAbsolute } from 'path';
+import { join, isAbsolute, basename, dirname, relative } from 'path';
 import { isDocumentEdited } from './documentAnalyzer.js';
 import { WorkflowStateRepository } from './workflowStateRepository.js';
 import { TaskParser } from './taskParser.js';
@@ -24,28 +24,42 @@ export class SpecManager {
    * Resolves the feature path using fuzzy logic and implicit context.
    */
   static resolveFeaturePath(baseDir: string, featureName?: string): string {
+    const rootDir = this.findProjectRoot(baseDir);
+
     if (featureName) {
+      let resolvedPath: string;
+
       if (isAbsolute(featureName)) {
         if (existsSync(featureName)) {
-          this.setLastUsed(baseDir, featureName);
-          return featureName;
+          resolvedPath = featureName;
+          this.setLastUsed(baseDir, relative(baseDir, resolvedPath) || '.');
+          return resolvedPath;
         }
       }
 
-      if (existsSync(join(baseDir, featureName))) {
-        this.setLastUsed(baseDir, featureName);
-        return join(baseDir, featureName);
+      // If we are already inside the feature directory, return baseDir
+      if (basename(baseDir) === featureName) {
+        resolvedPath = baseDir;
+        this.setLastUsed(baseDir, relative(baseDir, resolvedPath) || '.');
+        return resolvedPath;
       }
-      const commonDirs = [join('projects', 'active'), join('projects', 'completed'), 'active', 'completed', 'specs', 'docs'];
-      for (const dir of commonDirs) {
-        if (existsSync(join(baseDir, dir, featureName))) {
-          this.setLastUsed(baseDir, join(dir, featureName));
-          return join(baseDir, dir, featureName);
+
+      if (existsSync(join(rootDir, featureName))) {
+        resolvedPath = join(rootDir, featureName);
+      } else {
+        const commonDirs = [join('projects', 'active'), join('projects', 'completed'), 'active', 'completed', 'specs', 'docs'];
+        let foundPath: string | null = null;
+        for (const dir of commonDirs) {
+          if (existsSync(join(rootDir, dir, featureName))) {
+            foundPath = join(rootDir, dir, featureName);
+            break;
+          }
         }
+        resolvedPath = foundPath || join(rootDir, 'projects', 'active', featureName);
       }
-      const defaultPath = join('projects', 'active', featureName);
-      this.setLastUsed(baseDir, defaultPath);
-      return join(baseDir, defaultPath);
+
+      this.setLastUsed(baseDir, relative(baseDir, resolvedPath));
+      return resolvedPath;
     }
 
     const lastUsedPath = join(baseDir, this.LAST_USED_FILE);
@@ -62,6 +76,20 @@ export class SpecManager {
 
   private static setLastUsed(baseDir: string, featurePathRelative: string): void {
     writeFileSync(join(baseDir, this.LAST_USED_FILE), featurePathRelative, 'utf-8');
+  }
+
+  /**
+   * Finds the project root by searching upwards for marker files.
+   */
+  private static findProjectRoot(startDir: string): string {
+    let current = startDir;
+    while (current !== dirname(current)) {
+      if (existsSync(join(current, 'package.json')) || existsSync(join(current, '.git')) || existsSync(join(current, '.spec_root'))) {
+        return current;
+      }
+      current = dirname(current);
+    }
+    return startDir;
   }
 
   /**
@@ -134,6 +162,8 @@ export class SpecManager {
 
       let nextSteps = '';
       let phase = 'Specify';
+      let isPlanningPhase = true;
+
       if (!state.requirements.exists) {
          phase = WorkflowStateRepository.getStageDisplayName('requirements');
          nextSteps = 'Run `sc_init` to initialize requirements.';
@@ -161,6 +191,7 @@ export class SpecManager {
          phase = WorkflowStateRepository.getStageDisplayName('tasks');
          nextSteps = 'Edit tasks document. Add dependencies and organize execution order. Remove all `<template-tasks>` tags to indicate the draft is complete.';
       } else if (!allTasksComplete) {
+         isPlanningPhase = false;
          phase = 'Implementation';
          if (mode === 'one-shot') {
              nextSteps = '🚨 ONE-SHOT MODE ACTIVE: You are in the **Autonomous Ambiguity Resolution Loop**: 1. Self-review the task list for missing dependencies or unclear steps. 2. Use `sc_epoch --openQuestions "..."` to record findings. 3. Resolve all identified issues autonomously using your best judgment. 4. Ensure the task plan is comprehensive and dependencies are correct. Once verified, IMMEDIATELY run `sc_todo_start --id <first_task_id>` to begin implementation.';
@@ -168,9 +199,11 @@ export class SpecManager {
              nextSteps = 'Tasks drafted. If you have not yet received explicit approval from the user for the task list, you are in the **Ambiguity Resolution Loop**: 1. Self-review for missing dependencies. 2. Use `sc_epoch --openQuestions "..."` to record findings. 3. Resolve what you can. 4. Ask the user targeted questions (always include an "Other" or open-ended option). 5. DO NOT ask for final approval until all questions are answered. Once all questions are answered, ask for explicit approval (e.g., "Do the tasks look good?"). Once approved, run `sc_todo_start --id <id>` to begin implementation. If already approved, proceed with implementation.';
          }
       } else if (!state.testing.exists) {
+         isPlanningPhase = false;
          phase = WorkflowStateRepository.getStageDisplayName('testing');
          nextSteps = 'Implementation complete. Run `sc_plan` to scaffold the testing and verification plan.';
       } else if (!state.testing.edited) {
+         isPlanningPhase = false;
          phase = WorkflowStateRepository.getStageDisplayName('testing');
          if (mode === 'one-shot') {
              nextSteps = '🚨 ONE-SHOT MODE ACTIVE: 1. Draft the testing document (remove all `<template-testing>` tags). 2. Implement and execute automated tests (unit, integration, or E2E) as per the plan. 3. Autonomously fix any failures. 4. Once all tests pass, IMMEDIATELY run `sc_plan` to finalize the project.';
@@ -178,8 +211,13 @@ export class SpecManager {
              nextSteps = 'Edit testing document. Provide manual testing steps. Remove all `<template-testing>` tags. Ask the user to execute tests and provide feedback.';
          }
       } else {
+         isPlanningPhase = false;
          phase = 'Completed';
          nextSteps = 'Feature workflow is complete.';
+      }
+
+      if (isPlanningPhase) {
+          nextSteps = `🛑 STRICT MANDATE: You are in the Planning Phase. You MUST NOT write, modify, or generate any application source code yet. You must complete the Spec CLI workflow using sc_plan first.\n\n${nextSteps}`;
       }
 
       let epochInfo = '';
