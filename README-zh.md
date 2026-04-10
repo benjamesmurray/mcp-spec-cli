@@ -104,14 +104,16 @@ Spec CLI 提供了一套手术级的 MCP 工具，引导 AI 代理完成工作�
 
 | 命令 | 描述 |
 | :--- | :--- |
-| `spec-cli exec init --name <name>` | 初始化新功能。 |
+| `spec-cli exec init --name <name>` | 初始化新的功能规格说明。 |
 | `spec-cli exec plan` | 推进工作流状态。 |
+| `spec-cli exec approve` | 显式批准当前阶段。 |
+| `spec-cli exec guidance` | 获取详细的行为指令。 |
 | `spec-cli exec todo list` | 列出实施任务。 |
-| `spec-cli exec epoch --focus <text>` | 更新周期上下文。 |
-| `spec-cli exec mode <mode>` | 更改自主模式。 |
+| `spec-cli exec epoch --focus <text>` | 更新短期记忆上下文。 |
+| `spec-cli exec mode <mode>` | 在 'one-shot' 和 'step-through' 之间切换。 |
 | `spec-cli exec archive` | 手动存档项目。 |
-| `spec-cli status` | 检查进度和 GPS 下一步。 |
-| `spec-cli verify` | 验证当前状态。 |
+| `spec-cli status` | 获取活动项目的健康检查。 |
+| `spec-cli verify` | 验证当前状态并检查一致性。 |
 | `spec-cli help` | 显示帮助文档。 |
 
 ## 工作流特性

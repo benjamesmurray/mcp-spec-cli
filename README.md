@@ -109,16 +109,16 @@ While primarily used via MCP, Spec CLI also provides a powerful standalone inter
 
 | Command | Description |
 | :--- | :--- |
-| `spec-cli exec init --name <name>` | Initialize a new feature. |
+| `spec-cli exec init --name <name>` | Initialize a new feature specification. |
 | `spec-cli exec plan` | Progress the workflow state. |
 | `spec-cli exec approve` | Explicitly approve the current phase. |
 | `spec-cli exec guidance` | Get detailed behavioral instructions. |
 | `spec-cli exec todo list` | List implementation tasks. |
-| `spec-cli exec epoch --focus <text>` | Update epoch context. |
-| `spec-cli exec mode <mode>` | Change autonomy mode. |
-| `spec-cli exec archive` | Manually archive a project. |
-| `spec-cli status` | Check progress and GPS next steps. |
-| `spec-cli verify` | Verify the current state. |
+| `spec-cli exec epoch --focus <text>` | Update short-term memory context. |
+| `spec-cli exec mode <mode>` | Toggle between 'one-shot' and 'step-through'. |
+| `spec-cli exec archive` | Manually archive the project. |
+| `spec-cli status` | Get a health check of the active project. |
+| `spec-cli verify` | Verify current state and check consistency. |
 | `spec-cli help` | Show help documentation. |
 
 ## Workflow Features

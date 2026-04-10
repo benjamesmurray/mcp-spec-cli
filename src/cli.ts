@@ -74,69 +74,75 @@ async function main() {
         const topic = positionals[2];
         if (topic === 'init') {
           output = `
-Usage: spec-cli exec init --name <name> [options]
-
 Initialize a new feature specification.
 
-Options:
+Usage:
+  spec-cli exec init --name <name> [flags]
+
+Flags:
   --name <name>         Name of the feature (e.g., "user-auth").
   --description <text>  Brief overview of the feature.
   --mode <mode>         Set workflow mode: 'step-through' (default) or 'one-shot'.
 `;
         } else if (topic === 'plan') {
           output = `
-Usage: spec-cli exec plan [options]
-
 Progress the workflow to the next state (e.g., Requirements -> Design).
 Scaffolds the next document based on the current state.
 
-Options:
+Usage:
+  spec-cli exec plan [flags]
+
+Flags:
   --feature <name>      Target feature name.
   --instruction <text>  Add specific guidance or updates for the next phase.
 `;
         } else if (topic === 'approve') {
           output = `
-Usage: spec-cli exec approve [options]
-
 Explicitly approve the current drafted phase.
 This is required in 'step-through' mode before calling 'sc_plan' to move to the next phase.
 
-Options:
+Usage:
+  spec-cli exec approve [flags]
+
+Flags:
   --feature <name>      Target feature name.
 `;
         } else if (topic === 'guidance') {
           output = `
-Usage: spec-cli exec guidance [options]
-
 Get detailed behavioral instructions for the current state.
 Use this to understand the steps required for the "Ambiguity Resolution Loop".
 
-Options:
+Usage:
+  spec-cli exec guidance [flags]
+
+Flags:
   --feature <name>      Target feature name.
 `;
         } else if (topic === 'todo') {
           output = `
-Usage: spec-cli exec todo <action> [options]
-
 Manage implementation tasks.
 
-Actions:
+Usage:
+  spec-cli exec todo <action> [flags]
+
+Available Actions:
   list                  Show all tasks and their completion status.
   start --id <id>       Mark a task (e.g., "1.1") as actively being worked on.
   complete --id <id>    Mark a task as finished.
 
-Options:
+Flags:
   --feature <name>      Target feature name.
   --id <id>             The task ID (e.g., "1.1").
 `;
         } else if (topic === 'epoch') {
           output = `
-Usage: spec-cli exec epoch [options]
-
 Update context for short-term memory. 
 Helps agents maintain continuity across sessions.
 
-Options:
+Usage:
+  spec-cli exec epoch [flags]
+
+Flags:
   --feature <name>      Target feature name.
   --focus <text>        What is being worked on right now.
   --intentions <text>   What is planned next.
@@ -145,72 +151,82 @@ Options:
 `;
         } else if (topic === 'archive') {
           output = `
-Usage: spec-cli exec archive [options]
-
 Manually move the project to the completed directory.
 
-Options:
+Usage:
+  spec-cli exec archive [flags]
+
+Flags:
   --feature <name>      Target feature name.
 `;
         } else if (topic === 'mode') {
           output = `
-Usage: spec-cli exec mode <mode> [options]
-
 Toggle project mode between 'one-shot' and 'step-through'.
 
-Options:
+Usage:
+  spec-cli exec mode <mode> [flags]
+
+Flags:
   --feature <name>      Target feature name.
   <mode>                'one-shot' or 'step-through'.
 `;
         } else {
           output = `
-Usage: spec-cli exec <subcommand> [options]
+Perform an action as part of the specification workflow.
 
-Subcommands:
+Usage:
+  spec-cli exec [command]
+
+Available Commands:
   init          Initialize a new feature.
   plan          Progress the workflow state.
   approve       Approve the current drafted phase.
   guidance      Get detailed behavioral instructions.
   todo          Manage implementation tasks (list, start, complete).
   epoch         Update short-term memory context.
-  archive       Manually move the project to the completed directory.
+  archive       Manually archive the project.
   mode          Toggle between 'one-shot' and 'step-through'.
 
-Run 'spec-cli help exec <subcommand>' for details on a specific action.
+Use "spec-cli help exec [command]" for more information about a command.
 `;
         }
       } else {
         const topic = positionals[1];
         if (topic === 'status') {
           output = `
-Usage: spec-cli status [options]
-
 Get a health check of the active project and discover next steps.
 
-Options:
+Usage:
+  spec-cli status [flags]
+
+Flags:
   --feature <name>      Target feature name.
 `;
         } else if (topic === 'verify') {
           output = `
-Usage: spec-cli verify [options]
-
 Verify current state and check consistency. 
 A dedicated tool to validate that the last action worked.
 
-Options:
+Usage:
+  spec-cli verify [flags]
+
+Flags:
   --feature <name>      Target feature name.
 `;
         } else {
           output = `
-Usage: spec-cli <command> [subcommand] [options]
+MCP server for managing spec workflow (requirements, design, implementation).
 
-Commands:
-  status                   Get a health check of the active project.
-  verify                   Verify current state and check consistency.
-  exec <subcommand>        Perform an action (init, plan, approve, etc.).
-  help [topic]             Show help documentation.
+Usage:
+  spec-cli [command]
 
-Options:
+Available Commands:
+  status        Get a health check of the active project.
+  verify        Verify current state and check consistency.
+  exec          Perform a workflow action (init, plan, approve, etc.).
+  help          Help about any command.
+
+Flags:
   --feature <name>         Feature name context.
   --instruction <text>     Instructions for the next phase.
   --name <name>            Feature name (for init).
@@ -218,7 +234,7 @@ Options:
   --id <id>                Task ID (for todo).
   --mode <mode>            'one-shot' or 'step-through'.
 
-Run 'spec-cli help exec' for a list of all available actions.
+Use "spec-cli help [command]" for more information about a command.
 `;
         }
       }
