@@ -71,46 +71,114 @@ async function main() {
 
     if (command === 'help' || values.help) {
       if (subcommand === 'exec') {
-        output = `
+        const topic = positionals[2];
+        if (topic === 'init') {
+          output = `
+Usage: spec-cli exec init --name <name> [options]
+
+Initialize a new feature specification.
+
+Options:
+  --name <name>         Name of the feature (e.g., "user-auth").
+  --description <text>  Brief overview of the feature.
+  --mode <mode>         Set workflow mode: 'step-through' (default) or 'one-shot'.
+`;
+        } else if (topic === 'plan') {
+          output = `
+Usage: spec-cli exec plan [options]
+
+Progress the workflow to the next state (e.g., Requirements -> Design).
+Scaffolds the next document based on the current state.
+
+Options:
+  --feature <name>      Target feature name.
+  --instruction <text>  Add specific guidance or updates for the next phase.
+`;
+        } else if (topic === 'approve') {
+          output = `
+Usage: spec-cli exec approve [options]
+
+Explicitly approve the current drafted phase.
+This is required in 'step-through' mode before calling 'sc_plan' to move to the next phase.
+
+Options:
+  --feature <name>      Target feature name.
+`;
+        } else if (topic === 'guidance') {
+          output = `
+Usage: spec-cli exec guidance [options]
+
+Get detailed behavioral instructions for the current state.
+Use this to understand the steps required for the "Ambiguity Resolution Loop".
+
+Options:
+  --feature <name>      Target feature name.
+`;
+        } else if (topic === 'todo') {
+          output = `
+Usage: spec-cli exec todo <action> [options]
+
+Manage implementation tasks.
+
+Actions:
+  list                  Show all tasks and their completion status.
+  start --id <id>       Mark a task (e.g., "1.1") as actively being worked on.
+  complete --id <id>    Mark a task as finished.
+
+Options:
+  --feature <name>      Target feature name.
+  --id <id>             The task ID (e.g., "1.1").
+`;
+        } else if (topic === 'epoch') {
+          output = `
+Usage: spec-cli exec epoch [options]
+
+Update context for short-term memory. 
+Helps agents maintain continuity across sessions.
+
+Options:
+  --feature <name>      Target feature name.
+  --focus <text>        What is being worked on right now.
+  --intentions <text>   What is planned next.
+  --hypotheses <text>   Assumptions about the architecture or solution.
+  --openQuestions <text> Questions pending user feedback.
+`;
+        } else {
+          output = `
 Usage: spec-cli exec <subcommand> [options]
 
 Subcommands:
-  init          Initialize a new feature in 'projects/active/'.
-                Options: --name <name>, --description <text>, --mode <one-shot|step-through>
-  plan          Progress the workflow to the next state (e.g., Requirements -> Design).
-                Automatically archives to 'projects/completed/' upon completion.
-                Options: --feature <name>, --instruction <text>
-  todo <action> Manage implementation tasks.
-                Actions: list, start, complete
-                Options: --feature <name>, --id <task_id> (for start/complete)
-  epoch         Update context for short-term memory (focus, intentions, hypotheses, questions).
-                Options: --feature <name>, --focus <text>, --intentions <text>, --hypotheses <text>, --openQuestions <text>
-  archive       Manually move the project to the 'projects/completed/' directory.
-                Options: --feature <name>
-  mode <mode>   Toggle between 'one-shot' and 'step-through' modes.
-                Options: --feature <name>
+  init          Initialize a new feature.
+  plan          Progress the workflow state.
+  approve       Approve the current drafted phase.
+  guidance      Get detailed behavioral instructions.
+  todo          Manage implementation tasks (list, start, complete).
+  epoch         Update short-term memory context.
+  archive       Manually archive the project.
+  mode          Toggle between 'one-shot' and 'step-through'.
+
+Run 'spec-cli help exec <subcommand>' for details on a specific action.
 `;
+        }
       } else {
         output = `
 Usage: spec-cli <command> [subcommand] [options]
 
 Commands:
-  status                   Get a health check of the active project
-  help [topic]             Show help documentation (e.g. 'help exec')
-  exec <subcommand>        Perform an action (init, plan, todo, epoch, archive, mode)
-  verify                   Verify current state
+  status                   Get a health check of the active project.
+  verify                   Verify current state and check consistency.
+  exec <subcommand>        Perform an action (init, plan, approve, etc.).
+  help [topic]             Show help documentation.
 
 Options:
-  --feature <name>         Feature name
-  --instruction <text>     Instructions or updates
-  --name <name>            Feature or project name (for init)
-  --description <text>     Optional description (for init)
-  --id <id>                Task ID (for todo)
-  --focus <text>           Active focus (for epoch)
-  --intentions <text>      Pending intentions (for epoch)
-  --hypotheses <text>      Active hypotheses (for epoch)
-  --openQuestions <text>   Open questions (for epoch)
-  --mode <mode>            Operation mode: 'one-shot' or 'step-through' (for init)
+  --feature <name>         Feature name context.
+  --instruction <text>     Instructions for the next phase.
+  --name <name>            Feature name (for init).
+  --description <text>     Feature description (for init).
+  --id <id>                Task ID (for todo).
+  --mode <mode>            'one-shot' or 'step-through'.
+
+Run 'spec-cli help exec' for a list of all available actions.
 `;
       }
       console.log(output);
@@ -163,9 +231,18 @@ Options:
         output = `Mode updated successfully to ${mode}.\n\n${SpecManager.getStatusSummary(baseDir, values.feature)}`;
         console.log(output);
       }
+      else if (subcommand === 'approve') {
+        output = SpecManager.approve(baseDir, values.feature);
+        console.log(output);
+      }
+      else if (subcommand === 'guidance') {
+        output = SpecManager.getGuidance(baseDir, values.feature);
+        console.log(output);
+      }
       else if (subcommand === 'plan') {
         const featurePath = SpecManager.resolveFeaturePath(baseDir, values.feature);
         const state = SpecManager.getWorkflowState(featurePath);
+        const mode = SpecManager.getMode(featurePath);
         
         let message = '';
         if (!state.requirements.exists) {
@@ -180,6 +257,9 @@ Options:
         } else if (!state.requirements.edited) {
             message = `Please finish editing ${WorkflowStateRepository.getStageFileName('requirements')} (remove all <template> tags) before advancing.`;
             if (values.instruction) message += `\n> Reminder instruction: ${values.instruction}`;
+        } else if (!state.requirements.approved && mode !== 'one-shot') {
+            message = `Requirements drafted but not yet approved. Please run \`sc_guidance\` for review instructions, then \`sc_approve\` before advancing.`;
+            if (values.instruction) message += `\n> Reminder instruction: ${values.instruction}`;
         } else if (!state.design.exists) {
             let content = TemplateRepository.getInterpolatedTemplate('design', { 
               featureName: featurePath.split('/').pop() || 'feature' 
@@ -193,6 +273,9 @@ Options:
         } else if (!state.design.edited) {
             message = `Please finish editing ${WorkflowStateRepository.getStageFileName('design')} (remove all <template> tags) before advancing.`;
             if (values.instruction) message += `\n> Reminder instruction: ${values.instruction}`;
+        } else if (!state.design.approved && mode !== 'one-shot') {
+            message = `Design drafted but not yet approved. Please run \`sc_guidance\` for review instructions, then \`sc_approve\` before advancing.`;
+            if (values.instruction) message += `\n> Reminder instruction: ${values.instruction}`;
         } else if (!state.tasks.exists) {
             let content = TemplateRepository.getInterpolatedTemplate('tasks', { 
               featureName: featurePath.split('/').pop() || 'feature' 
@@ -205,6 +288,9 @@ Options:
             if (guide) message += `\n\n--- Guide ---\n${guide}`;
         } else if (!state.tasks.edited) {
             message = `Please finish editing ${WorkflowStateRepository.getStageFileName('tasks')} (remove all <template> tags) before advancing.`;
+            if (values.instruction) message += `\n> Reminder instruction: ${values.instruction}`;
+        } else if (!state.tasks.approved && mode !== 'one-shot') {
+            message = `Tasks drafted but not yet approved. Please run \`sc_guidance\` for review instructions, then \`sc_approve\` before advancing.`;
             if (values.instruction) message += `\n> Reminder instruction: ${values.instruction}`;
         } else {
             // Check if all tasks are complete
@@ -237,6 +323,9 @@ Options:
                 } else {
                     message = `Please finish editing ${WorkflowStateRepository.getStageFileName('testing')} (remove all <template> tags) and wait for user feedback before advancing.`;
                 }
+                if (values.instruction) message += `\n> Reminder instruction: ${values.instruction}`;
+            } else if (!state.testing.approved && mode !== 'one-shot') {
+                message = `Testing plan drafted but not yet approved. Please run \`sc_guidance\` for review instructions, then \`sc_approve\` before advancing.`;
                 if (values.instruction) message += `\n> Reminder instruction: ${values.instruction}`;
             } else {
                 message = 'Workflow is completely finished.';

@@ -54,7 +54,7 @@ components:
       properties:
         type:
           type: string
-          enum: [sc_init, init, check, skip, confirm, complete_task, update_epoch]
+          enum: [sc_init, init, check, skip, confirm, complete_task, update_epoch, approve, guidance]
           description: |
             Operation type to perform:
 
@@ -62,7 +62,9 @@ components:
             - **init**: Initialize a new feature specification
             - **check**: Check current workflow status
             - **skip**: Skip current stage
-            - **confirm**: Confirm current stage completion
+            - **confirm**: Confirm current stage completion (often followed by sc_plan to progress)
+            - **approve**: Explicitly approve the current drafted phase after review
+            - **guidance**: Get detailed behavioral instructions for the current state
             - **complete_task**: Mark task(s) as completed
             - **update_epoch**: Update the continuous task-epoch context
 
@@ -325,7 +327,7 @@ components:
             📝 Created: requirements.md
             
             📊 Overall progress: ${progress}%
-            🔄 Current status: Writing requirements document (current) → Next step: use sc_status to verify progress
+            🔄 Current status: Writing requirements document (current) → Next step: ⚠️ [ACTION REQUIRED] Complete drafting requirements and remove all <template-requirements> tags.
             
             Model please continue with the following actions:
             1. Read the requirements-guide below

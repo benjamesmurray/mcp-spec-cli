@@ -19,7 +19,8 @@ The traditional approach to AI coding often leads to scope creep and forgotten r
 *   **Automated Guidance Injection:** Automatically injects phase-specific engineering constraints (Requirements, Design, Tasks) directly into the workflow, ensuring the AI adheres to the specified rigour.
 *   **Intelligent Task Organization:** After the initial task document is written, the tool performs a "refresh" step. It organizes tasks with clear dependencies, establishes a sensible execution order, and annotates them with cross-references to the requirements and design documents.
 *   **Persistent Task-Epoch Memory:** A "short-term memory" system (`.epoch-context.md`) that tracks active focus, pending intentions, and hypotheses via `sc_epoch`. This ensures that if an AI session is interrupted or closed, the next session resumes with perfect context.
-*   **The "GPS Breadcrumb" System:** At the end of every tool call, `mcp-spec-cli` outputs an explicit "Next Step" directive. This turns the tool into an autonomous GPS, heavily reducing the need for lengthy system prompts.
+*   **The "GPS Breadcrumb" System:** At the end of every tool call, `mcp-spec-cli` outputs an explicit "Next Step" directive. This turns the tool into an autonomous GPS, heavily reducing the need for lengthy system prompts. To keep the status output clean, verbose behavioral instructions (like the "Ambiguity Resolution Loop") are accessible via the `sc_guidance` tool.
+*   **Explicit Approval Gates:** To prevent premature implementation, the workflow includes an explicit `sc_approve` step. After the AI completes a draft (Requirements, Design, or Tasks), it enters a **Reviewing** state. In Step-Through mode, it must resolve ambiguities and receive approval before calling `sc_approve`. Only once approved can `sc_plan` be used to scaffold the next phase.
 *   **Lexer-Guided Reliability:** Uses a robust Markdown lexer (powered by `marked`) instead of fragile Regular Expressions to parse and surgically update documents. This ensures task checkboxes are updated accurately without corrupting other formatting.
 
 ## Workflow Diagram
@@ -30,28 +31,29 @@ stateDiagram-v2
 
     state "Phase 1: Requirements" as REQ {
         [*] --> InitReq: sc_init
-        InitReq --> EditReq: AI Drafts & Updates
-        EditReq --> AmbiguityLoop: Resolve Uncertainties
-        AmbiguityLoop --> AskUser: "Does this look good?"
-        AskUser --> ConfirmReq: User Approves
-        ConfirmReq --> [*]: sc_plan
+        InitReq --> EditReq: AI Drafts (Pending Edits)
+        EditReq --> ReviewReq: Remove tags (Reviewing)
+        ReviewReq --> GuidanceReq: sc_guidance (Ambiguity Loop)
+        GuidanceReq --> ApproveReq: sc_approve
+        ApproveReq --> [*]: sc_plan
     }
 
     state "Phase 2: Design" as DES {
         [*] --> ScaffoldDes: Reset Epoch Context
-        ScaffoldDes --> Research: AI Research & Drafts
-        Research --> AmbiguityLoopDes: Resolve Uncertainties
-        AmbiguityLoopDes --> AskUserDes: "Does this look good?"
-        AskUserDes --> ConfirmDes: User Approves
-        ConfirmDes --> [*]: sc_plan
+        ScaffoldDes --> Research: AI Drafts (Pending Edits)
+        Research --> ReviewDes: Remove tags (Reviewing)
+        ReviewDes --> GuidanceDes: sc_guidance (Ambiguity Loop)
+        GuidanceDes --> ApproveDes: sc_approve
+        ApproveDes --> [*]: sc_plan
     }
 
     state "Phase 3: Implementation Planning" as TSK {
         [*] --> ScaffoldTasks: Reset Epoch Context
-        ScaffoldTasks --> RefreshTasks: Add Dependencies & Refs
-        RefreshTasks --> AskUserTasks: "Does this look good?"
-        AskUserTasks --> ConfirmTasks: User Approves
-        ConfirmTasks --> [*]: sc_plan
+        ScaffoldTasks --> RefreshTasks: AI Drafts (Pending Edits)
+        RefreshTasks --> ReviewTsk: Remove tags (Reviewing)
+        ReviewTsk --> GuidanceTsk: sc_guidance (Ambiguity Loop)
+        GuidanceTsk --> ApproveTsk: sc_approve
+        ApproveTsk --> [*]: sc_plan
     }
 
     state "Phase 4: Implementation" as IMP {
@@ -63,10 +65,10 @@ stateDiagram-v2
 
     state "Phase 5: Testing & Verification" as TST {
         [*] --> ScaffoldTest: sc_plan
-        ScaffoldTest --> ExecuteTest: AI/User Runs Tests
-        ExecuteTest --> Feedback: Record Results/Feedback
-        Feedback --> ConfirmTest: Verification Complete
-        ConfirmTest --> Archive: sc_plan (Finished)
+        ScaffoldTest --> ReviewTst: Remove tags (Reviewing)
+        ReviewTst --> GuidanceTst: sc_guidance
+        GuidanceTst --> ApproveTst: sc_approve
+        ApproveTst --> Archive: sc_plan (Finished)
     }
     
     state Archive {
@@ -88,7 +90,9 @@ Spec CLI provides a suite of surgical MCP tools to guide the AI agent through th
 | :--- | :--- | :--- |
 | `sc_init` | Initialize a new feature specification in `projects/active/`. | `{"name": "auth-system", "mode": "one-shot"}` |
 | `sc_plan` | Progress the workflow state. Automatically archives when finished. | `{"instruction": "Use PostgreSQL"}` |
-| `sc_status` | Get a health check of the active project and next steps. | `{"feature": "auth-system"}` |
+| `sc_approve` | Explicitly approve the current drafted phase after review. | `{}` |
+| `sc_guidance` | Get detailed behavioral instructions for the current state. | `{}` |
+| `sc_status` | Get a health check of the active project and snappy next steps. | `{"feature": "auth-system"}` |
 | `sc_todo_list` | List all implementation tasks and their status. | `{}` |
 | `sc_todo_start` | Mark a specific task as being actively worked on. | `{"id": "1.1"}` |
 | `sc_todo_complete` | Mark a specific task as completed. | `{"id": "1.1"}` |
@@ -106,6 +110,8 @@ While primarily used via MCP, Spec CLI also provides a powerful standalone inter
 | :--- | :--- |
 | `spec-cli exec init --name <name>` | Initialize a new feature. |
 | `spec-cli exec plan` | Progress the workflow state. |
+| `spec-cli exec approve` | Explicitly approve the current phase. |
+| `spec-cli exec guidance` | Get detailed behavioral instructions. |
 | `spec-cli exec todo list` | List implementation tasks. |
 | `spec-cli exec epoch --focus <text>` | Update epoch context. |
 | `spec-cli exec mode <mode>` | Change autonomy mode. |

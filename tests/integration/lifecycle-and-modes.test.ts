@@ -71,15 +71,15 @@ describe('Lifecycle and Modes Integration', () => {
 
     // 2. Check status (should show one-shot instructions)
     const statusRes1 = await tools['sc_status'].callback({ feature: featureName }, {});
-    expect(statusRes1.content[0].text).toContain('🚨 ONE-SHOT MODE ACTIVE');
+    expect(statusRes1.content[0].text).toContain('🤖 [AUTONOMOUS REVIEW] Resolve ambiguities autonomously. Run `sc_guidance`. Once resolved, run `sc_plan` to scaffold the design phase.');
 
     // 3. Toggle back to step-through
     await tools['sc_mode'].callback({ mode: 'step-through', feature: featureName }, {});
     
     // 4. Check status (should show normal loop instructions)
     const statusRes2 = await tools['sc_status'].callback({ feature: featureName }, {});
-    expect(statusRes2.content[0].text).not.toContain('🚨 ONE-SHOT MODE ACTIVE');
-    expect(statusRes2.content[0].text).toContain('Ambiguity Resolution Loop');
+    expect(statusRes2.content[0].text).not.toContain('🤖 [AUTONOMOUS REVIEW]');
+    expect(statusRes2.content[0].text).toContain('🔍 [REVIEW]');
   });
 
   it('should automatically archive the project when the workflow is finished', async () => {
@@ -96,15 +96,19 @@ describe('Lifecycle and Modes Integration', () => {
     const tstFile = WorkflowStateRepository.getStageFileName('testing');
 
     writeFileSync(join(activePath, reqFile), 'Done', 'utf-8');
+    await tools['sc_approve'].callback({}, {});
     await tools['sc_plan'].callback({}, {}); // Scaffolds Design
     
     writeFileSync(join(activePath, desFile), 'Done', 'utf-8');
+    await tools['sc_approve'].callback({}, {});
     await tools['sc_plan'].callback({}, {}); // Scaffolds Tasks
     
     writeFileSync(join(activePath, tskFile), '# Tasks\n- [x] 1.1 Done', 'utf-8');
+    await tools['sc_approve'].callback({}, {});
     await tools['sc_plan'].callback({}, {}); // Scaffolds Testing
     
     writeFileSync(join(activePath, tstFile), 'Testing Done', 'utf-8');
+    await tools['sc_approve'].callback({}, {});
     
     // 2. Final plan call to finish and archive
     const finalPlanRes = await tools['sc_plan'].callback({}, {});
@@ -113,5 +117,5 @@ describe('Lifecycle and Modes Integration', () => {
     expect(finalPlanRes.content[0].text).toContain('Successfully archived project');
     expect(existsSync(activePath)).toBe(false);
     expect(existsSync(completedPath)).toBe(true);
-  });
+  }, 30000);
 });

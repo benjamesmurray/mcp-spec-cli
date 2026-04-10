@@ -76,6 +76,9 @@ describe('Epoch Context Integration', () => {
     // First finish requirements
     writeFileSync(join(tempDir, 'projects', 'active', featureName, reqFile), '# Requirements\nDone.', 'utf-8');
     
+    // Approve requirements
+    await tools['sc_approve'].callback({ feature: featureName }, {});
+    
     await tools['sc_plan'].callback({ feature: featureName }, {});
     
     content = readFileSync(epochPath, 'utf-8');

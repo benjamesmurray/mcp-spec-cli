@@ -7,10 +7,10 @@ import { TaskParser } from './taskParser.js';
 export type FeatureState = 'Requirements Pending' | 'Requirements Confirmed' | 'Design Confirmed' | 'Tasks Pending' | 'Tasks Completed' | 'Testing Pending' | 'Testing Confirmed';
 
 export interface WorkflowState {
-  requirements: { exists: boolean; edited: boolean };
-  design: { exists: boolean; edited: boolean };
-  tasks: { exists: boolean; edited: boolean };
-  testing: { exists: boolean; edited: boolean };
+  requirements: { exists: boolean; edited: boolean; approved: boolean };
+  design: { exists: boolean; edited: boolean; approved: boolean };
+  tasks: { exists: boolean; edited: boolean; approved: boolean };
+  testing: { exists: boolean; edited: boolean; approved: boolean };
   featurePath: string;
 }
 
@@ -118,9 +118,11 @@ export class SpecManager {
     const checkDoc = (stage: string) => {
       const fileName = WorkflowStateRepository.getStageFileName(stage);
       const filePath = join(featurePath, fileName);
+      const approvedPath = join(featurePath, `.spec-${stage}-approved`);
       return {
         exists: existsSync(filePath),
-        edited: isDocumentEdited(filePath)
+        edited: isDocumentEdited(filePath),
+        approved: existsSync(approvedPath)
       };
     };
 
@@ -142,23 +144,26 @@ export class SpecManager {
       const state = this.getWorkflowState(featurePath);
       const mode = this.getMode(featurePath);
 
-      const reqStatus = state.requirements.exists ? (state.requirements.edited ? 'Drafted' : 'Pending Edits') : 'Missing';
-      const desStatus = state.design.exists ? (state.design.edited ? 'Drafted' : 'Pending Edits') : 'Missing';
-      const tskStatus = state.tasks.exists ? (state.tasks.edited ? 'Active' : 'Pending Edits') : 'Missing';
+      const formatStatus = (s: { exists: boolean, edited: boolean, approved: boolean }, label: string) => {
+          if (!s.exists) return 'Missing';
+          if (!s.edited) return 'Pending Edits';
+          if (!s.approved) return 'Reviewing';
+          return label;
+      };
+
+      const reqStatus = formatStatus(state.requirements, 'Drafted');
+      const desStatus = formatStatus(state.design, 'Drafted');
       
       let allTasksComplete = false;
       if (state.tasks.exists && state.tasks.edited) {
         const tasksPath = join(featurePath, WorkflowStateRepository.getStageFileName('tasks'));
         const content = readFileSync(tasksPath, 'utf-8');
         const tasks = TaskParser.parse(content);
-        const checkAllComplete = (ts: any[]): boolean => ts.length > 0 && ts.every(t => t.completed && checkAllComplete(t.children !== undefined ? t.children : []));
-        // We only require roots and their children to be complete. If no tasks, it's not complete.
-        // Wait, checkAllComplete needs to handle empty children properly.
         const areTasksDone = (ts: any[]): boolean => ts.every(t => t.completed && (t.children.length === 0 || areTasksDone(t.children)));
         allTasksComplete = tasks.length > 0 && areTasksDone(tasks);
       }
-
-      const tstStatus = state.testing.exists ? (state.testing.edited ? 'Drafted' : 'Pending Edits') : 'Missing';
+      const tskStatus = allTasksComplete ? 'Completed' : formatStatus(state.tasks, 'Active');
+      const tstStatus = formatStatus(state.testing, 'Drafted');
 
       let nextSteps = '';
       let phase = 'Specify';
@@ -169,47 +174,52 @@ export class SpecManager {
          nextSteps = 'Run `sc_init` to initialize requirements.';
       } else if (!state.requirements.edited) {
          phase = WorkflowStateRepository.getStageDisplayName('requirements');
-         nextSteps = 'Edit requirements document. Remove all `<template-requirements>` tags to indicate the draft is complete.';
+         nextSteps = '⚠️ [ACTION REQUIRED] Complete drafting requirements and remove all `<template-requirements>` tags.';
+      } else if (!state.requirements.approved) {
+         phase = WorkflowStateRepository.getStageDisplayName('requirements');
+         nextSteps = mode === 'one-shot' 
+            ? '🤖 [AUTONOMOUS REVIEW] Resolve ambiguities autonomously. Run `sc_guidance`. Once resolved, run `sc_plan` to scaffold the design phase.'
+            : '🔍 [REVIEW] Requirements drafted. Run `sc_guidance` for review steps. Use `sc_approve` when ready.';
       } else if (!state.design.exists) {
          phase = WorkflowStateRepository.getStageDisplayName('requirements');
-         if (mode === 'one-shot') {
-             nextSteps = '🚨 ONE-SHOT MODE ACTIVE: You are in the **Autonomous Ambiguity Resolution Loop**: 1. Self-review the requirements for ambiguities or edge cases. 2. Use `sc_epoch --openQuestions "..."` to record findings. 3. Resolve all identified issues autonomously using your best judgment. 4. Ensure all open questions are answered and closed. Once all ambiguities are resolved autonomously, IMMEDIATELY run `sc_plan` to scaffold the design phase.';
-         } else {
-             nextSteps = 'Requirements drafted. You are in the **Ambiguity Resolution Loop**: 1. Self-review for ambiguities/edge cases. 2. Use `sc_epoch --openQuestions "..."` to record findings. 3. Resolve what you can confidently. 4. Ask the user targeted questions for the rest. If using a prompter tool, always include an "Other" or open-ended option; never restrict to strict Yes/No. 5. DO NOT ask for final approval until all questions are answered. Repeat this loop if answers raise new questions. Once all ambiguities are resolved, ask the user for explicit approval (e.g., "Do the requirements look good?"). Once explicitly approved, run `sc_plan` to scaffold the design phase.';
-         }
+         nextSteps = '✅ [APPROVED] Run `sc_plan` to scaffold the design phase.';
       } else if (!state.design.edited) {
          phase = WorkflowStateRepository.getStageDisplayName('design');
-         nextSteps = 'Edit design document. Conduct necessary research. Remove all `<template-design>` tags to indicate the draft is complete.';
+         nextSteps = '⚠️ [ACTION REQUIRED] Complete drafting design and remove all `<template-design>` tags.';
+      } else if (!state.design.approved) {
+         phase = WorkflowStateRepository.getStageDisplayName('design');
+         nextSteps = mode === 'one-shot'
+            ? '🤖 [AUTONOMOUS REVIEW] Resolve technical ambiguities autonomously. Run `sc_guidance`. Once resolved, run `sc_plan` to scaffold the tasks phase.'
+            : '🔍 [REVIEW] Design drafted. Run `sc_guidance` for review steps. Use `sc_approve` when ready.';
       } else if (!state.tasks.exists) {
          phase = WorkflowStateRepository.getStageDisplayName('design');
-         if (mode === 'one-shot') {
-             nextSteps = '🚨 ONE-SHOT MODE ACTIVE: You are in the **Autonomous Ambiguity Resolution Loop**: 1. Self-review the design for technical ambiguities or missing details. 2. Use `sc_epoch --openQuestions "..."` to record findings. 3. Resolve all identified issues autonomously using your best judgment. 4. Ensure all open questions are answered and closed. Once all ambiguities are resolved autonomously, IMMEDIATELY run `sc_plan` to scaffold the tasks phase.';
-         } else {
-             nextSteps = 'Design drafted. You are in the **Ambiguity Resolution Loop**: 1. Self-review for technical ambiguities/missing details. 2. Use `sc_epoch --openQuestions "..."` to record findings. 3. Resolve what you can confidently. 4. Ask the user targeted questions for the rest (always include an "Other" or open-ended option). 5. DO NOT ask for final approval until all questions are answered. Repeat this loop if answers raise new questions. Once all ambiguities are resolved, ask the user for explicit approval (e.g., "Does the design look good?"). Once explicitly approved, run `sc_plan` to scaffold the tasks phase.';
-         }
+         nextSteps = '✅ [APPROVED] Run `sc_plan` to scaffold the tasks phase.';
       } else if (!state.tasks.edited) {
          phase = WorkflowStateRepository.getStageDisplayName('tasks');
-         nextSteps = 'Edit tasks document. Add dependencies and organize execution order. Remove all `<template-tasks>` tags to indicate the draft is complete.';
+         nextSteps = '⚠️ [ACTION REQUIRED] Complete drafting tasks and remove all `<template-tasks>` tags.';
+      } else if (!state.tasks.approved) {
+         phase = WorkflowStateRepository.getStageDisplayName('tasks');
+         nextSteps = mode === 'one-shot'
+            ? '🤖 [AUTONOMOUS REVIEW] Verify task plan autonomously. Run `sc_guidance`. Once verified, run `sc_todo_start` to begin.'
+            : '🔍 [REVIEW] Tasks drafted. Run `sc_guidance` for review steps. Use `sc_approve` when ready.';
       } else if (!allTasksComplete) {
          isPlanningPhase = false;
          phase = 'Implementation';
-         if (mode === 'one-shot') {
-             nextSteps = '🚨 ONE-SHOT MODE ACTIVE: You are in the **Autonomous Ambiguity Resolution Loop**: 1. Self-review the task list for missing dependencies or unclear steps. 2. Use `sc_epoch --openQuestions "..."` to record findings. 3. Resolve all identified issues autonomously using your best judgment. 4. Ensure the task plan is comprehensive and dependencies are correct. Once verified, IMMEDIATELY run `sc_todo_start --id <first_task_id>` to begin implementation.';
-         } else {
-             nextSteps = 'Tasks drafted. If you have not yet received explicit approval from the user for the task list, you are in the **Ambiguity Resolution Loop**: 1. Self-review for missing dependencies. 2. Use `sc_epoch --openQuestions "..."` to record findings. 3. Resolve what you can. 4. Ask the user targeted questions (always include an "Other" or open-ended option). 5. DO NOT ask for final approval until all questions are answered. Once all questions are answered, ask for explicit approval (e.g., "Do the tasks look good?"). Once approved, run `sc_todo_start --id <id>` to begin implementation. If already approved, proceed with implementation.';
-         }
+         nextSteps = '🚀 [IMPLEMENTATION] Proceed with tasks. Run `sc_todo_start` to begin.';
       } else if (!state.testing.exists) {
          isPlanningPhase = false;
          phase = WorkflowStateRepository.getStageDisplayName('testing');
-         nextSteps = 'Implementation complete. Run `sc_plan` to scaffold the testing and verification plan.';
+         nextSteps = '✅ [COMPLETED] Implementation complete. Run `sc_plan` to scaffold testing.';
       } else if (!state.testing.edited) {
          isPlanningPhase = false;
          phase = WorkflowStateRepository.getStageDisplayName('testing');
-         if (mode === 'one-shot') {
-             nextSteps = '🚨 ONE-SHOT MODE ACTIVE: 1. Draft the testing document (remove all `<template-testing>` tags). 2. Implement and execute automated tests (unit, integration, or E2E) as per the plan. 3. Autonomously fix any failures. 4. Once all tests pass, IMMEDIATELY run `sc_plan` to finalize the project.';
-         } else {
-             nextSteps = 'Edit testing document. Provide manual testing steps. Remove all `<template-testing>` tags. Ask the user to execute tests and provide feedback.';
-         }
+         nextSteps = '⚠️ [ACTION REQUIRED] Complete drafting testing and remove all `<template-testing>` tags.';
+      } else if (!state.testing.approved) {
+         isPlanningPhase = false;
+         phase = WorkflowStateRepository.getStageDisplayName('testing');
+         nextSteps = mode === 'one-shot'
+            ? '🤖 [AUTONOMOUS TEST] Execute tests autonomously. Run `sc_guidance`. Once passed, run `sc_plan` to finalize.'
+            : '🔍 [REVIEW] Testing plan drafted. Run `sc_guidance` for review steps. Use `sc_approve` when ready.';
       } else {
          isPlanningPhase = false;
          phase = 'Completed';
@@ -217,7 +227,7 @@ export class SpecManager {
       }
 
       if (isPlanningPhase) {
-          nextSteps = `🛑 STRICT MANDATE: You are in the Planning Phase. You MUST NOT write, modify, or generate any application source code yet. You must complete the Spec CLI workflow (Requirements -> Design -> Tasks) first. Use sc_plan only to progress to the next stage after the current one is finalized and approved.\n\n${nextSteps}`;
+          nextSteps = `🛑 STRICT MANDATE: You are in the Planning Phase. You MUST NOT write source code. Use sc_plan only after approval.\n\n${nextSteps}`;
       }
 
       let epochInfo = '';
@@ -231,7 +241,7 @@ export class SpecManager {
 Feature: ${featurePath.replace(baseDir, '').replace(/^[\/\\]/, '')}
 Requirements: ${reqStatus}
 Design: ${desStatus}
-Tasks: ${allTasksComplete ? 'Completed' : tskStatus}
+Tasks: ${tskStatus}
 Testing: ${tstStatus}
 Next Step: ${nextSteps}${epochInfo}`;
     } catch (e: any) {
@@ -239,5 +249,69 @@ Next Step: ${nextSteps}${epochInfo}`;
 Error: ${e.message}
 Next Step: Run \`sc_init --name "your-feature"\` to start a new feature.`;
     }
+  }
+
+  /**
+   * Gets detailed behavioral guidance for the current state.
+   */
+  static getGuidance(baseDir: string, featureName?: string): string {
+    const featurePath = this.resolveFeaturePath(baseDir, featureName);
+    const state = this.getWorkflowState(featurePath);
+    const mode = this.getMode(featurePath);
+
+    if (state.requirements.exists && state.requirements.edited && !state.requirements.approved) {
+        if (mode === 'one-shot') {
+            return '🚨 ONE-SHOT MODE ACTIVE: You are in the **Autonomous Ambiguity Resolution Loop**:\n1. Self-review the requirements for ambiguities or edge cases.\n2. Use `sc_epoch --openQuestions "..."` to record findings.\n3. Resolve all identified issues autonomously using your best judgment.\n4. Ensure all open questions are answered and closed.\nOnce all ambiguities are resolved autonomously, IMMEDIATELY run `sc_plan` to scaffold the design phase.';
+        } else {
+            return 'You are in the **Ambiguity Resolution Loop**:\n1. Self-review for ambiguities/edge cases.\n2. Use `sc_epoch --openQuestions "..."` to record findings.\n3. Resolve what you can confidently.\n4. Ask the user targeted questions for the rest. If using a prompter tool, always include an "Other" or open-ended option; never restrict to strict Yes/No. 5. DO NOT ask for final approval until all questions are answered. Repeat this loop if answers raise new questions.\nOnce all ambiguities are resolved, ask the user for explicit approval. Once explicitly approved, run `sc_approve` to finalize.';
+        }
+    }
+    
+    if (state.design.exists && state.design.edited && !state.design.approved) {
+        if (mode === 'one-shot') {
+            return '🚨 ONE-SHOT MODE ACTIVE: You are in the **Autonomous Ambiguity Resolution Loop**:\n1. Self-review the design for technical ambiguities or missing details.\n2. Use `sc_epoch --openQuestions "..."` to record findings.\n3. Resolve all identified issues autonomously using your best judgment.\n4. Ensure all open questions are answered and closed.\nOnce all ambiguities are resolved autonomously, IMMEDIATELY run `sc_plan` to scaffold the tasks phase.';
+        } else {
+            return 'You are in the **Ambiguity Resolution Loop**:\n1. Self-review for technical ambiguities/missing details.\n2. Use `sc_epoch --openQuestions "..."` to record findings.\n3. Resolve what you can confidently.\n4. Ask the user targeted questions for the rest (always include an "Other" or open-ended option).\n5. DO NOT ask for final approval until all questions are answered. Repeat this loop if answers raise new questions.\nOnce all ambiguities are resolved, ask the user for explicit approval. Once explicitly approved, run `sc_approve` to finalize.';
+        }
+    }
+
+    if (state.tasks.exists && state.tasks.edited && !state.tasks.approved) {
+        if (mode === 'one-shot') {
+            return '🚨 ONE-SHOT MODE ACTIVE: You are in the **Autonomous Ambiguity Resolution Loop**:\n1. Self-review the task list for missing dependencies or unclear steps.\n2. Use `sc_epoch --openQuestions "..."` to record findings.\n3. Resolve all identified issues autonomously using your best judgment.\n4. Ensure the task plan is comprehensive and dependencies are correct.\nOnce verified, IMMEDIATELY run `sc_todo_start` to begin implementation.';
+        } else {
+            return 'You are in the **Ambiguity Resolution Loop**:\n1. Self-review for missing dependencies.\n2. Use `sc_epoch --openQuestions "..."` to record findings.\n3. Resolve what you can.\n4. Ask the user targeted questions (always include an "Other" or open-ended option).\n5. DO NOT ask for final approval until all questions are answered.\nOnce all questions are answered, ask for explicit approval. Once approved, run `sc_approve` to finalize.';
+        }
+    }
+
+    if (state.testing.exists && state.testing.edited && !state.testing.approved) {
+        if (mode === 'one-shot') {
+            return '🚨 ONE-SHOT MODE ACTIVE:\n1. Draft the testing document (remove all `<template-testing>` tags).\n2. Implement and execute automated tests (unit, integration, or E2E) as per the plan.\n3. Autonomously fix any failures.\n4. Once all tests pass, IMMEDIATELY run `sc_plan` to finalize the project.';
+        } else {
+            return 'Edit testing document. Provide manual testing steps. Remove all `<template-testing>` tags. Ask the user to execute tests and provide feedback. Once passed, run `sc_approve` to finalize.';
+        }
+    }
+
+    return 'No specific behavioral guidance for the current state. Follow the snappy "Next Step" in `sc_status`.';
+  }
+
+  /**
+   * Approves the current phase.
+   */
+  static approve(baseDir: string, featureName?: string): string {
+    const featurePath = this.resolveFeaturePath(baseDir, featureName);
+    const state = this.getWorkflowState(featurePath);
+    let phase = '';
+    if (state.requirements.exists && state.requirements.edited && !state.requirements.approved) phase = 'requirements';
+    else if (state.design.exists && state.design.edited && !state.design.approved) phase = 'design';
+    else if (state.tasks.exists && state.tasks.edited && !state.tasks.approved) phase = 'tasks';
+    else if (state.testing.exists && state.testing.edited && !state.testing.approved) phase = 'testing';
+    
+    if (!phase) {
+        throw new Error('No phase is currently in a "Reviewing" state to be approved.');
+    }
+
+    const approvedPath = join(featurePath, `.spec-${phase}-approved`);
+    writeFileSync(approvedPath, new Date().toISOString(), 'utf-8');
+    return `✅ Phase "${WorkflowStateRepository.getStageDisplayName(phase)}" has been approved. Run \`sc_plan\` to scaffold the next phase.`;
   }
 }

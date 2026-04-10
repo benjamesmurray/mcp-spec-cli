@@ -58,6 +58,7 @@ describe('Workflow State Diagram Integration', () => {
     writeFileSync(reqPath, '# Requirements\nConfirmed requirements.', 'utf-8');
 
     // Second call advances to Design
+    await tools['sc_approve'].callback({}, {});
     const planToDesign = await tools['sc_plan'].callback({}, {});
     expect(planToDesign.content[0].text).toContain(`Requirements complete. Scaffolding ${desFile}.`);
     expect(planToDesign.content[0].text).toContain('Design: Pending Edits');
@@ -73,6 +74,7 @@ describe('Workflow State Diagram Integration', () => {
     writeFileSync(desPath, '# Design\nConfirmed design.', 'utf-8');
 
     // Second call advances to Tasks
+    await tools['sc_approve'].callback({}, {});
     const planToTasks = await tools['sc_plan'].callback({}, {});
     expect(planToTasks.content[0].text).toContain(`Design complete. Scaffolding ${tskFile}.`);
     expect(planToTasks.content[0].text).toContain('Tasks: Pending Edits');
@@ -82,6 +84,9 @@ describe('Workflow State Diagram Integration', () => {
     // Simulate approval of tasks
     const tasksPath = join(tempDir, 'projects', 'active', featureName, tskFile);
     writeFileSync(tasksPath, '# Tasks\n- [ ] 1.1 First task\n- [ ] 1.2 Second task', 'utf-8');
+
+    // Approve tasks to move to Implementation
+    await tools['sc_approve'].callback({}, {});
 
     // Transition to Implementation phase
     const statusRes = await tools['sc_status'].callback({ feature: featureName }, {});
@@ -109,7 +114,7 @@ describe('Workflow State Diagram Integration', () => {
     const finalStatus = await tools['sc_status'].callback({ feature: featureName }, {});
     expect(finalStatus.content[0].text).toContain('Tasks: Completed');
     expect(finalStatus.content[0].text).toContain('Testing: Missing');
-    expect(finalStatus.content[0].text).toContain('Run `sc_plan` to scaffold the user testing plan.');
+    expect(finalStatus.content[0].text).toContain('✅ [COMPLETED] Implementation complete. Run `sc_plan` to scaffold testing.');
 
     const tasksContent = readFileSync(tasksPath, 'utf-8');
     expect(tasksContent).not.toContain('- [ ]');

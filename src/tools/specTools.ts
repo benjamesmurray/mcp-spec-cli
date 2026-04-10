@@ -187,6 +187,46 @@ export function registerSpecTools(server: McpServer): void {
   );
 
   server.registerTool(
+    'sc_approve',
+    {
+      description: 'Explicitly approve the current drafted phase after review.',
+      inputSchema: {
+        feature: z.string().optional().describe('Feature name (optional)')
+      }
+    },
+    async (args) => {
+      try {
+        const cliArgs = ['exec', 'approve'];
+        if (args.feature) cliArgs.push('--feature', args.feature);
+        const result = await runCli(cliArgs);
+        return { content: [{ type: 'text', text: result }] };
+      } catch (error: any) {
+        return { content: [{ type: 'text', text: `Error: ${error.message}` }], isError: true };
+      }
+    }
+  );
+
+  server.registerTool(
+    'sc_guidance',
+    {
+      description: 'Get detailed behavioral instructions for the current state (e.g., Ambiguity Resolution Loop steps).',
+      inputSchema: {
+        feature: z.string().optional().describe('Feature name (optional)')
+      }
+    },
+    async (args) => {
+      try {
+        const cliArgs = ['exec', 'guidance'];
+        if (args.feature) cliArgs.push('--feature', args.feature);
+        const result = await runCli(cliArgs);
+        return { content: [{ type: 'text', text: result }] };
+      } catch (error: any) {
+        return { content: [{ type: 'text', text: `Error: ${error.message}` }], isError: true };
+      }
+    }
+  );
+
+  server.registerTool(
     'sc_archive',
     {
       description: 'Manually move the project to the completed directory.',

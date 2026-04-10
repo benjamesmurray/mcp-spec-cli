@@ -118,10 +118,10 @@ describe('SpecManager', () => {
       const summary = SpecManager.getStatusSummary(tempDir, featureName);
       expect(summary).toContain('Requirements: Pending Edits');
       expect(summary).toContain('🛑 STRICT MANDATE: You are in the Planning Phase');
-      expect(summary).toContain('Edit requirements document. Remove all `<template-requirements>` tags to indicate the draft is complete.');
+      expect(summary).toContain('⚠️ [ACTION REQUIRED] Complete drafting requirements and remove all `<template-requirements>` tags.');
     });
 
-    it('should return drafted if document exists and has no <template-*> tags', () => {
+    it('should return Reviewing if document exists and has no <template-*> tags', () => {
       const featureName = 'test-feature';
       const featurePath = join(tempDir, 'projects', 'active', featureName);
       mkdirSync(featurePath, { recursive: true });
@@ -130,10 +130,10 @@ describe('SpecManager', () => {
       writeFileSync(join(featurePath, reqFile), 'Completed requirements without tags', 'utf-8');
       
       const summary = SpecManager.getStatusSummary(tempDir, featureName);
-      expect(summary).toContain('Requirements: Drafted');
+      expect(summary).toContain('Requirements: Reviewing');
       expect(summary).toContain('Design: Missing');
       expect(summary).toContain('🛑 STRICT MANDATE: You are in the Planning Phase');
-      expect(summary).toContain('Requirements drafted. You are in the **Ambiguity Resolution Loop**:');
+      expect(summary).toContain('🔍 [REVIEW] Requirements drafted. Run `sc_guidance` for review steps. Use `sc_approve` when ready.');
     });
 
     it('should return one-shot specific instructions when mode is one-shot', () => {
@@ -146,13 +146,12 @@ describe('SpecManager', () => {
       writeFileSync(join(featurePath, reqFile), 'Completed requirements without tags', 'utf-8');
       
       const summary = SpecManager.getStatusSummary(tempDir, featureName);
-      expect(summary).toContain('Requirements: Drafted');
+      expect(summary).toContain('Requirements: Reviewing');
       expect(summary).toContain('🛑 STRICT MANDATE: You are in the Planning Phase');
-      expect(summary).toContain('🚨 ONE-SHOT MODE ACTIVE: You are in the **Autonomous Ambiguity Resolution Loop**');
-      expect(summary).toContain('IMMEDIATELY run `sc_plan`');
+      expect(summary).toContain('🤖 [AUTONOMOUS REVIEW] Resolve ambiguities autonomously. Run `sc_guidance`. Once resolved, run `sc_plan` to scaffold the design phase.');
     });
     
-    it('should handle full workflow completion state', () => {
+    it('should handle full workflow Reviewing state', () => {
       const featureName = 'test-feature';
       const featurePath = join(tempDir, featureName);
       mkdirSync(featurePath);
@@ -162,27 +161,41 @@ describe('SpecManager', () => {
       writeFileSync(join(featurePath, WorkflowStateRepository.getStageFileName('tasks')), 'Tsk', 'utf-8');
       
       const summary = SpecManager.getStatusSummary(tempDir, featureName);
-      expect(summary).toContain('Requirements: Drafted');
-      expect(summary).toContain('Design: Drafted');
-      expect(summary).toContain('Tasks: Active');
-      expect(summary).toContain('Next Step: Tasks drafted. If you have not yet received explicit approval');
+      expect(summary).toContain('Requirements: Reviewing');
+      expect(summary).toContain('Design: Reviewing');
+      expect(summary).toContain('Tasks: Reviewing');
     });
 
-    it('should return one-shot specific instructions for testing phase', () => {
+    it('should return Action Required for testing phase pending edits', () => {
       const featureName = 'test-feature';
       const featurePath = join(tempDir, 'projects', 'active', featureName);
       mkdirSync(featurePath, { recursive: true });
       SpecManager.setMode(featurePath, 'one-shot');
       
       writeFileSync(join(featurePath, WorkflowStateRepository.getStageFileName('requirements')), 'Req', 'utf-8');
+      writeFileSync(join(featurePath, '.spec-requirements-approved'), 'ok', 'utf-8');
       writeFileSync(join(featurePath, WorkflowStateRepository.getStageFileName('design')), 'Des', 'utf-8');
+      writeFileSync(join(featurePath, '.spec-design-approved'), 'ok', 'utf-8');
       writeFileSync(join(featurePath, WorkflowStateRepository.getStageFileName('tasks')), '- [x] 1.1 Done', 'utf-8');
+      writeFileSync(join(featurePath, '.spec-tasks-approved'), 'ok', 'utf-8');
       writeFileSync(join(featurePath, WorkflowStateRepository.getStageFileName('testing')), '<template-testing>placeholder</template-testing>', 'utf-8');
       
       const summary = SpecManager.getStatusSummary(tempDir, featureName);
       expect(summary).toContain('Testing: Pending Edits');
-      expect(summary).toContain('🚨 ONE-SHOT MODE ACTIVE: 1. Draft the testing document');
-      expect(summary).toContain('2. Implement and execute automated tests');
+      expect(summary).toContain('⚠️ [ACTION REQUIRED] Complete drafting testing and remove all `<template-testing>` tags.');
+    });
+
+    it('should return approved state when approval marker exists', () => {
+      const featureName = 'test-feature';
+      const featurePath = join(tempDir, 'projects', 'active', featureName);
+      mkdirSync(featurePath, { recursive: true });
+      
+      writeFileSync(join(featurePath, WorkflowStateRepository.getStageFileName('requirements')), 'Req', 'utf-8');
+      writeFileSync(join(featurePath, '.spec-requirements-approved'), '2026-04-10', 'utf-8');
+      
+      const summary = SpecManager.getStatusSummary(tempDir, featureName);
+      expect(summary).toContain('Requirements: Drafted');
+      expect(summary).toContain('✅ [APPROVED] Run `sc_plan` to scaffold the design phase.');
     });
 
     it('should include epoch context in status summary if file exists', () => {
