@@ -102,6 +102,7 @@ Spec CLI provides a suite of surgical MCP tools to guide the AI agent through th
 | `sc_archive` | Manually move the project to the `projects/completed/` folder. | `{}` |
 | `sc_help` | Learn how to use the tools and get deep documentation. | `{"topic": "sc_plan"}` |
 | `sc_verify` | A dedicated tool to validate that the last action worked. | `{}` |
+| `sc_refresh` | Force a refresh and synchronization of the internal workflow state machine. | `{}` |
 
 ## Command Line Interface
 

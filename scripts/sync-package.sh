@@ -114,6 +114,7 @@ Add to your MCP client configuration:
 - `sc_mode` - Toggle between one-shot and step-through modes
 - `sc_archive` - Manually move project to completed directory
 - `sc_verify` - Validate the last action worked
+- `sc_refresh` - Force a refresh and synchronization of the internal workflow state machine
 - `sc_help` - Show help documentation
 
 ## Documentation

@@ -54,11 +54,12 @@ components:
       properties:
         type:
           type: string
-          enum: [sc_init, init, check, skip, confirm, complete_task, update_epoch, approve, guidance]
+          enum: [sc_init, sc_refresh, init, check, skip, confirm, complete_task, update_epoch, approve, guidance]
           description: |
             Operation type to perform:
 
             - **sc_init**: Initialize project workspace (usually not called directly - MCP will automatically guide model to use this when needed)
+            - **sc_refresh**: Force a refresh and synchronization of the internal workflow state machine after editing a document. Use this to verify action persistence.
             - **init**: Initialize a new feature specification
             - **check**: Check current workflow status
             - **skip**: Skip current stage
@@ -1027,6 +1028,7 @@ x-shared-resources:
     text: |
       ⚠️ Important: Model please delete all content with <template-*> tags, then start writing formal content.
       These tags are used to detect whether the document has been edited. Keeping these tags will cause the document to be judged as "not edited" status.
+      To verify your actions have persisted and to refresh the state, use `sc_refresh`. **NEVER** use `sc_init` to refresh the state, as it will reset the workflow.
   
   # Requirements document example (reuses existing requirements-guide)
   requirements-template-example:

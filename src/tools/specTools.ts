@@ -306,4 +306,24 @@ export function registerSpecTools(server: McpServer): void {
       }
     }
   );
+
+  server.registerTool(
+    'sc_refresh',
+    {
+      description: 'Force a refresh and synchronization of the internal workflow state machine after editing a document. Use this to verify action persistence.',
+      inputSchema: {
+         feature: z.string().optional().describe('Feature name (optional)')
+      }
+    },
+    async (args) => {
+      try {
+        const cliArgs = ['verify'];
+        if (args.feature) cliArgs.push('--feature', args.feature);
+        const result = await runCli(cliArgs);
+        return { content: [{ type: 'text', text: result }] };
+      } catch (error: any) {
+        return { content: [{ type: 'text', text: `Error: ${error.message}` }], isError: true };
+      }
+    }
+  );
 }

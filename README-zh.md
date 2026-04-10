@@ -97,6 +97,7 @@ Spec CLI 提供了一套手术级的 MCP 工具，引导 AI 代理完成工作�
 | `sc_archive` | 手动将项目移动到 `projects/completed/` 文件夹。 | `{}` |
 | `sc_help` | 了解如何使用工具并获取深入文档。 | `{"topic": "sc_plan"}` |
 | `sc_verify` | 用于验证上一步操作是否成功的专用工具。 | `{}` |
+| `sc_refresh` | 强制刷新并同步内部工作流状态机。 | `{}` |
 
 ## 命令行界面
 
