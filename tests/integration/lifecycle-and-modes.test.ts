@@ -96,18 +96,22 @@ describe('Lifecycle and Modes Integration', () => {
     const tstFile = WorkflowStateRepository.getStageFileName('testing');
 
     writeFileSync(join(activePath, reqFile), 'Done', 'utf-8');
+    await tools['sc_guidance'].callback({}, {});
     await tools['sc_approve'].callback({}, {});
     await tools['sc_plan'].callback({}, {}); // Scaffolds Design
     
     writeFileSync(join(activePath, desFile), 'Done', 'utf-8');
+    await tools['sc_guidance'].callback({}, {});
     await tools['sc_approve'].callback({}, {});
     await tools['sc_plan'].callback({}, {}); // Scaffolds Tasks
     
     writeFileSync(join(activePath, tskFile), '# Tasks\n- [x] 1.1 Done', 'utf-8');
+    await tools['sc_guidance'].callback({}, {});
     await tools['sc_approve'].callback({}, {});
     await tools['sc_plan'].callback({}, {}); // Scaffolds Testing
     
     writeFileSync(join(activePath, tstFile), 'Testing Done', 'utf-8');
+    await tools['sc_guidance'].callback({}, {});
     await tools['sc_approve'].callback({}, {});
     
     // 2. Final plan call to finish and archive

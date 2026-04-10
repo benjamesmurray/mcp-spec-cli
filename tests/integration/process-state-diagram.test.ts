@@ -58,6 +58,7 @@ describe('Workflow State Diagram Integration', () => {
     writeFileSync(reqPath, '# Requirements\nConfirmed requirements.', 'utf-8');
 
     // Second call advances to Design
+    await tools['sc_guidance'].callback({}, {});
     await tools['sc_approve'].callback({}, {});
     const planToDesign = await tools['sc_plan'].callback({}, {});
     expect(planToDesign.content[0].text).toContain(`Requirements complete. Scaffolding ${desFile}.`);
@@ -74,6 +75,7 @@ describe('Workflow State Diagram Integration', () => {
     writeFileSync(desPath, '# Design\nConfirmed design.', 'utf-8');
 
     // Second call advances to Tasks
+    await tools['sc_guidance'].callback({}, {});
     await tools['sc_approve'].callback({}, {});
     const planToTasks = await tools['sc_plan'].callback({}, {});
     expect(planToTasks.content[0].text).toContain(`Design complete. Scaffolding ${tskFile}.`);
@@ -86,6 +88,7 @@ describe('Workflow State Diagram Integration', () => {
     writeFileSync(tasksPath, '# Tasks\n- [ ] 1.1 First task\n- [ ] 1.2 Second task', 'utf-8');
 
     // Approve tasks to move to Implementation
+    await tools['sc_guidance'].callback({}, {});
     await tools['sc_approve'].callback({}, {});
 
     // Transition to Implementation phase

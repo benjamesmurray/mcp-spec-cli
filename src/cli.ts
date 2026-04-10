@@ -261,6 +261,15 @@ Run 'spec-cli help exec' for a list of all available actions.
             message = `Requirements drafted but not yet approved. Please run \`sc_guidance\` for review instructions, then \`sc_approve\` before advancing.`;
             if (values.instruction) message += `\n> Reminder instruction: ${values.instruction}`;
         } else if (!state.design.exists) {
+            if (mode === 'one-shot') {
+                try {
+                    SpecManager.validateTransition(featurePath, 'requirements');
+                } catch (e: any) {
+                    output = `${e.message}\n\n${SpecManager.getStatusSummary(baseDir, values.feature)}`;
+                    console.log(output);
+                    return;
+                }
+            }
             let content = TemplateRepository.getInterpolatedTemplate('design', { 
               featureName: featurePath.split('/').pop() || 'feature' 
             });
@@ -277,6 +286,15 @@ Run 'spec-cli help exec' for a list of all available actions.
             message = `Design drafted but not yet approved. Please run \`sc_guidance\` for review instructions, then \`sc_approve\` before advancing.`;
             if (values.instruction) message += `\n> Reminder instruction: ${values.instruction}`;
         } else if (!state.tasks.exists) {
+            if (mode === 'one-shot') {
+                try {
+                    SpecManager.validateTransition(featurePath, 'design');
+                } catch (e: any) {
+                    output = `${e.message}\n\n${SpecManager.getStatusSummary(baseDir, values.feature)}`;
+                    console.log(output);
+                    return;
+                }
+            }
             let content = TemplateRepository.getInterpolatedTemplate('tasks', { 
               featureName: featurePath.split('/').pop() || 'feature' 
             });
@@ -307,6 +325,15 @@ Run 'spec-cli help exec' for a list of all available actions.
                 message = 'Not all implementation tasks are complete. Proceed with `exec todo` or finish tasks manually.';
                 if (values.instruction) message += `\n> Received instruction: ${values.instruction}`;
             } else if (!state.testing.exists) {
+                if (mode === 'one-shot') {
+                    try {
+                        SpecManager.validateTransition(featurePath, 'tasks');
+                    } catch (e: any) {
+                        output = `${e.message}\n\n${SpecManager.getStatusSummary(baseDir, values.feature)}`;
+                        console.log(output);
+                        return;
+                    }
+                }
                 let content = TemplateRepository.getInterpolatedTemplate('testing', { 
                   featureName: featurePath.split('/').pop() || 'feature' 
                 });
@@ -328,6 +355,15 @@ Run 'spec-cli help exec' for a list of all available actions.
                 message = `Testing plan drafted but not yet approved. Please run \`sc_guidance\` for review instructions, then \`sc_approve\` before advancing.`;
                 if (values.instruction) message += `\n> Reminder instruction: ${values.instruction}`;
             } else {
+                if (mode === 'one-shot') {
+                    try {
+                        SpecManager.validateTransition(featurePath, 'testing');
+                    } catch (e: any) {
+                        output = `${e.message}\n\n${SpecManager.getStatusSummary(baseDir, values.feature)}`;
+                        console.log(output);
+                        return;
+                    }
+                }
                 message = 'Workflow is completely finished.';
                 const archiveResult = archiveProject(baseDir, values.feature);
                 message += `\n\n${archiveResult}`;

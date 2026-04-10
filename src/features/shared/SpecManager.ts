@@ -259,39 +259,68 @@ Next Step: Run \`sc_init --name "your-feature"\` to start a new feature.`;
     const state = this.getWorkflowState(featurePath);
     const mode = this.getMode(featurePath);
 
+    let phase = '';
+    let guidanceText = '';
+
     if (state.requirements.exists && state.requirements.edited && !state.requirements.approved) {
-        if (mode === 'one-shot') {
-            return '🚨 ONE-SHOT MODE ACTIVE: You are in the **Autonomous Ambiguity Resolution Loop**:\n1. Self-review the requirements for ambiguities or edge cases.\n2. Use `sc_epoch --openQuestions "..."` to record findings.\n3. Resolve all identified issues autonomously using your best judgment.\n4. Ensure all open questions are answered and closed.\nOnce all ambiguities are resolved autonomously, IMMEDIATELY run `sc_plan` to scaffold the design phase.';
-        } else {
-            return 'You are in the **Ambiguity Resolution Loop**:\n1. Self-review for ambiguities/edge cases.\n2. Use `sc_epoch --openQuestions "..."` to record findings.\n3. Resolve what you can confidently.\n4. Ask the user targeted questions for the rest. If using a prompter tool, always include an "Other" or open-ended option; never restrict to strict Yes/No. 5. DO NOT ask for final approval until all questions are answered. Repeat this loop if answers raise new questions.\nOnce all ambiguities are resolved, ask the user for explicit approval. Once explicitly approved, run `sc_approve` to finalize.';
-        }
-    }
-    
-    if (state.design.exists && state.design.edited && !state.design.approved) {
-        if (mode === 'one-shot') {
-            return '🚨 ONE-SHOT MODE ACTIVE: You are in the **Autonomous Ambiguity Resolution Loop**:\n1. Self-review the design for technical ambiguities or missing details.\n2. Use `sc_epoch --openQuestions "..."` to record findings.\n3. Resolve all identified issues autonomously using your best judgment.\n4. Ensure all open questions are answered and closed.\nOnce all ambiguities are resolved autonomously, IMMEDIATELY run `sc_plan` to scaffold the tasks phase.';
-        } else {
-            return 'You are in the **Ambiguity Resolution Loop**:\n1. Self-review for technical ambiguities/missing details.\n2. Use `sc_epoch --openQuestions "..."` to record findings.\n3. Resolve what you can confidently.\n4. Ask the user targeted questions for the rest (always include an "Other" or open-ended option).\n5. DO NOT ask for final approval until all questions are answered. Repeat this loop if answers raise new questions.\nOnce all ambiguities are resolved, ask the user for explicit approval. Once explicitly approved, run `sc_approve` to finalize.';
-        }
-    }
-
-    if (state.tasks.exists && state.tasks.edited && !state.tasks.approved) {
-        if (mode === 'one-shot') {
-            return '🚨 ONE-SHOT MODE ACTIVE: You are in the **Autonomous Ambiguity Resolution Loop**:\n1. Self-review the task list for missing dependencies or unclear steps.\n2. Use `sc_epoch --openQuestions "..."` to record findings.\n3. Resolve all identified issues autonomously using your best judgment.\n4. Ensure the task plan is comprehensive and dependencies are correct.\nOnce verified, IMMEDIATELY run `sc_todo_start` to begin implementation.';
-        } else {
-            return 'You are in the **Ambiguity Resolution Loop**:\n1. Self-review for missing dependencies.\n2. Use `sc_epoch --openQuestions "..."` to record findings.\n3. Resolve what you can.\n4. Ask the user targeted questions (always include an "Other" or open-ended option).\n5. DO NOT ask for final approval until all questions are answered.\nOnce all questions are answered, ask for explicit approval. Once approved, run `sc_approve` to finalize.';
-        }
+        phase = 'requirements';
+        guidanceText = mode === 'one-shot' 
+            ? '🚨 ONE-SHOT MODE ACTIVE: You are in the **Autonomous Ambiguity Resolution Loop**:\n1. Self-review the requirements for ambiguities or edge cases.\n2. Use `sc_epoch --openQuestions "..."` to record findings.\n3. Resolve all identified issues autonomously using your best judgment.\n4. Ensure all open questions are answered and closed.\nOnce all ambiguities are resolved autonomously, IMMEDIATELY run `sc_plan` to scaffold the design phase.\n\n### Self-Review Checklist:\n- Are all requirements clear and unambiguous?\n- Are edge cases considered?\n- Is the scope clearly defined?'
+            : 'You are in the **Ambiguity Resolution Loop**:\n1. Self-review for ambiguities/edge cases.\n2. Use `sc_epoch --openQuestions "..."` to record findings.\n3. Resolve what you can confidently.\n4. Ask the user targeted questions for the rest. If using a prompter tool, always include an "Other" or open-ended option; never restrict to strict Yes/No. 5. DO NOT ask for final approval until all questions are answered. Repeat this loop if answers raise new questions.\nOnce all ambiguities are resolved, ask the user for explicit approval. Once explicitly approved, run `sc_approve` to finalize.\n\n### Self-Review Checklist:\n- Are all requirements clear and unambiguous?\n- Are edge cases considered?\n- Is the scope clearly defined?';
+    } else if (state.design.exists && state.design.edited && !state.design.approved) {
+        phase = 'design';
+        guidanceText = mode === 'one-shot'
+            ? '🚨 ONE-SHOT MODE ACTIVE: You are in the **Autonomous Ambiguity Resolution Loop**:\n1. Self-review the design for technical ambiguities or missing details.\n2. Use `sc_epoch --openQuestions "..."` to record findings.\n3. Resolve all identified issues autonomously using your best judgment.\n4. Ensure all open questions are answered and closed.\nOnce all ambiguities are resolved autonomously, IMMEDIATELY run `sc_plan` to scaffold the tasks phase.\n\n### Self-Review Checklist:\n- Check for circular dependencies in Design.\n- Ensure all acceptance criteria have corresponding design elements.\n- Are data models clearly defined?'
+            : 'You are in the **Ambiguity Resolution Loop**:\n1. Self-review for technical ambiguities/missing details.\n2. Use `sc_epoch --openQuestions "..."` to record findings.\n3. Resolve what you can confidently.\n4. Ask the user targeted questions for the rest (always include an "Other" or open-ended option).\n5. DO NOT ask for final approval until all questions are answered. Repeat this loop if answers raise new questions.\nOnce all ambiguities are resolved, ask the user for explicit approval. Once explicitly approved, run `sc_approve` to finalize.\n\n### Self-Review Checklist:\n- Check for circular dependencies in Design.\n- Ensure all acceptance criteria have corresponding design elements.\n- Are data models clearly defined?';
+    } else if (state.tasks.exists && state.tasks.edited && !state.tasks.approved) {
+        phase = 'tasks';
+        guidanceText = mode === 'one-shot'
+            ? '🚨 ONE-SHOT MODE ACTIVE: You are in the **Autonomous Ambiguity Resolution Loop**:\n1. Self-review the task list for missing dependencies or unclear steps.\n2. Use `sc_epoch --openQuestions "..."` to record findings.\n3. Resolve all identified issues autonomously using your best judgment.\n4. Ensure the task plan is comprehensive and dependencies are correct.\nOnce verified, IMMEDIATELY run `sc_todo_start` to begin implementation.\n\n### Self-Review Checklist:\n- Ensure all acceptance criteria have corresponding tasks.\n- Are dependencies between tasks logically ordered?\n- Are task sizes appropriately granular?'
+            : 'You are in the **Ambiguity Resolution Loop**:\n1. Self-review for missing dependencies.\n2. Use `sc_epoch --openQuestions "..."` to record findings.\n3. Resolve what you can.\n4. Ask the user targeted questions (always include an "Other" or open-ended option).\n5. DO NOT ask for final approval until all questions are answered.\nOnce all questions are answered, ask for explicit approval. Once approved, run `sc_approve` to finalize.\n\n### Self-Review Checklist:\n- Ensure all acceptance criteria have corresponding tasks.\n- Are dependencies between tasks logically ordered?\n- Are task sizes appropriately granular?';
+    } else if (state.testing.exists && state.testing.edited && !state.testing.approved) {
+        phase = 'testing';
+        guidanceText = mode === 'one-shot'
+            ? '🚨 ONE-SHOT MODE ACTIVE:\n1. Draft the testing document (remove all `<template-testing>` tags).\n2. Implement and execute automated tests (unit, integration, or E2E) as per the plan.\n3. Autonomously fix any failures.\n4. Once all tests pass, IMMEDIATELY run `sc_plan` to finalize the project.\n\n### Self-Review Checklist:\n- Are all tasks covered by testing?\n- Are edge cases tested?\n- Are testing steps clear and reproducible?'
+            : 'Edit testing document. Provide manual testing steps. Remove all `<template-testing>` tags. Ask the user to execute tests and provide feedback. Once passed, run `sc_approve` to finalize.\n\n### Self-Review Checklist:\n- Are all tasks covered by testing?\n- Are edge cases tested?\n- Are testing steps clear and reproducible?';
     }
 
-    if (state.testing.exists && state.testing.edited && !state.testing.approved) {
-        if (mode === 'one-shot') {
-            return '🚨 ONE-SHOT MODE ACTIVE:\n1. Draft the testing document (remove all `<template-testing>` tags).\n2. Implement and execute automated tests (unit, integration, or E2E) as per the plan.\n3. Autonomously fix any failures.\n4. Once all tests pass, IMMEDIATELY run `sc_plan` to finalize the project.';
-        } else {
-            return 'Edit testing document. Provide manual testing steps. Remove all `<template-testing>` tags. Ask the user to execute tests and provide feedback. Once passed, run `sc_approve` to finalize.';
-        }
+    if (phase) {
+        const markerPath = join(featurePath, `.spec-${phase}-guidance`);
+        writeFileSync(markerPath, new Date().toISOString(), 'utf-8');
+        return guidanceText;
     }
 
     return 'No specific behavioral guidance for the current state. Follow the snappy "Next Step" in `sc_status`.';
+  }
+
+  /**
+   * Validates that the current phase is ready to be approved or advanced.
+   */
+  static validateTransition(featurePath: string, phase: string): void {
+    const guidancePath = join(featurePath, `.spec-${phase}-guidance`);
+    if (!existsSync(guidancePath)) {
+        throw new Error(`You must run \`sc_guidance\` to review the ${phase} before advancing.`);
+    }
+
+    const epochPath = join(featurePath, '.epoch-context.md');
+    if (existsSync(epochPath)) {
+        const epochContent = readFileSync(epochPath, 'utf-8');
+        const openQuestionsMatch = epochContent.match(/## Open Questions \/ Uncertainties\n([\s\S]*?)(?=##|$)/);
+        if (openQuestionsMatch) {
+            const questionsText = openQuestionsMatch[1].trim();
+            if (questionsText.length > 0 && questionsText !== '*' && questionsText.toLowerCase() !== 'none') {
+                 // Check if it's just empty bullets
+                 const lines = questionsText.split('\n').filter(l => l.trim().length > 0);
+                 const hasRealQuestions = lines.some(l => {
+                     const t = l.replace(/^\*\s*/, '').trim();
+                     return t.length > 0 && t.toLowerCase() !== 'none' && t !== '*';
+                 });
+                 if (hasRealQuestions) {
+                     throw new Error(`Cannot advance while there are active open questions in the epoch context. Please resolve them using \`sc_epoch --openQuestions "None"\`.`);
+                 }
+            }
+        }
+    }
   }
 
   /**
@@ -309,6 +338,8 @@ Next Step: Run \`sc_init --name "your-feature"\` to start a new feature.`;
     if (!phase) {
         throw new Error('No phase is currently in a "Reviewing" state to be approved.');
     }
+
+    this.validateTransition(featurePath, phase);
 
     const approvedPath = join(featurePath, `.spec-${phase}-approved`);
     writeFileSync(approvedPath, new Date().toISOString(), 'utf-8');
