@@ -143,6 +143,25 @@ Options:
   --hypotheses <text>   Assumptions about the architecture or solution.
   --openQuestions <text> Questions pending user feedback.
 `;
+        } else if (topic === 'archive') {
+          output = `
+Usage: spec-cli exec archive [options]
+
+Manually move the project to the completed directory.
+
+Options:
+  --feature <name>      Target feature name.
+`;
+        } else if (topic === 'mode') {
+          output = `
+Usage: spec-cli exec mode <mode> [options]
+
+Toggle project mode between 'one-shot' and 'step-through'.
+
+Options:
+  --feature <name>      Target feature name.
+  <mode>                'one-shot' or 'step-through'.
+`;
         } else {
           output = `
 Usage: spec-cli exec <subcommand> [options]
@@ -154,14 +173,35 @@ Subcommands:
   guidance      Get detailed behavioral instructions.
   todo          Manage implementation tasks (list, start, complete).
   epoch         Update short-term memory context.
-  archive       Manually archive the project.
+  archive       Manually move the project to the completed directory.
   mode          Toggle between 'one-shot' and 'step-through'.
 
 Run 'spec-cli help exec <subcommand>' for details on a specific action.
 `;
         }
       } else {
-        output = `
+        const topic = positionals[1];
+        if (topic === 'status') {
+          output = `
+Usage: spec-cli status [options]
+
+Get a health check of the active project and discover next steps.
+
+Options:
+  --feature <name>      Target feature name.
+`;
+        } else if (topic === 'verify') {
+          output = `
+Usage: spec-cli verify [options]
+
+Verify current state and check consistency. 
+A dedicated tool to validate that the last action worked.
+
+Options:
+  --feature <name>      Target feature name.
+`;
+        } else {
+          output = `
 Usage: spec-cli <command> [subcommand] [options]
 
 Commands:
@@ -180,6 +220,7 @@ Options:
 
 Run 'spec-cli help exec' for a list of all available actions.
 `;
+        }
       }
       console.log(output);
       Logger.logCommand(process.argv.slice(2).join(' '), [], output);
