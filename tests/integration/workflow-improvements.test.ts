@@ -148,7 +148,7 @@ describe('Workflow Improvements Integration', () => {
 
         // Attempt sc_plan without sc_guidance/sc_analyze - should fail due to enforcement
         const planResFail = await tools['sc_plan'].callback({ feature: featureName }, {});
-        expect(planResFail.content[0].text).toContain('You must run `sc_guidance`');
+        expect(planResFail.content[0].text).toContain('You must run `spec sc_guidance`');
 
         // Run guidance and analyze
         await tools['sc_guidance'].callback({ feature: featureName }, {});

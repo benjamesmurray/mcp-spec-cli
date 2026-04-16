@@ -105,17 +105,19 @@ Spec CLI 提供了一套手术级的 MCP 工具，引导 AI 代理完成工作�
 
 | 命令 | 描述 |
 | :--- | :--- |
-| `spec-cli exec init --name <name>` | 初始化新的功能规格说明。 |
-| `spec-cli exec plan` | 推进工作流状态。 |
-| `spec-cli exec approve` | 显式批准当前阶段。 |
-| `spec-cli exec guidance` | 获取详细的行为指令。 |
-| `spec-cli exec todo list` | 列出实施任务。 |
-| `spec-cli exec epoch --focus <text>` | 更新短期记忆上下文。 |
-| `spec-cli exec mode <mode>` | 在 'one-shot' 和 'step-through' 之间切换。 |
-| `spec-cli exec archive` | 手动存档项目。 |
-| `spec-cli status` | 获取活动项目的健康检查。 |
-| `spec-cli verify` | 验证当前状态并检查一致性。 |
-| `spec-cli help` | 显示帮助文档。 |
+| `spec sc_init --name <name>` | 初始化新的功能规格说明。 |
+| `spec sc_plan` | 推进工作流状态。 |
+| `spec sc_approve` | 显式批准当前阶段。 |
+| `spec sc_analyze` | 执行专门的歧义分析。 |
+| `spec sc_guidance` | 获取详细的行为指令。 |
+| `spec sc_feedback --feedback <text>` | 提供用户反馈或回答。 |
+| `spec sc_todo_list` | 列出实施任务。 |
+| `spec sc_epoch --focus <text>` | 更新短期记忆上下文。 |
+| `spec sc_mode <mode>` | 在 'one-shot' 和 'step-through' 之间切换。 |
+| `spec sc_archive` | 手动存档项目。 |
+| `spec sc_status` | 获取活动项目的健康检查。 |
+| `spec sc_verify` | 验证当前状态并检查一致性。 |
+| `spec sc_help` | 显示帮助文档。 |
 
 ## 工作流特性
 

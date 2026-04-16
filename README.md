@@ -120,19 +120,19 @@ While primarily used via MCP, Spec CLI also provides a powerful standalone inter
 
 | Command | Description |
 | :--- | :--- |
-| `spec-cli exec init --name <name>` | Initialize a new feature specification. |
-| `spec-cli exec plan` | Progress the workflow state. |
-| `spec-cli exec approve` | Explicitly approve the current phase. |
-| `spec-cli exec analyze` | Perform a dedicated ambiguity analysis. |
-| `spec-cli exec guidance` | Get detailed behavioral instructions. |
-| `spec-cli exec feedback --instruction <text>` | Provide user feedback or answers. |
-| `spec-cli exec todo list` | List implementation tasks. |
-| `spec-cli exec epoch --focus <text>` | Update short-term memory context. |
-| `spec-cli exec mode <mode>` | Toggle between 'one-shot' and 'step-through'. |
-| `spec-cli exec archive` | Manually archive the project. |
-| `spec-cli status` | Get a health check of the active project. |
-| `spec-cli verify` | Verify current state and check consistency. |
-| `spec-cli help` | Show help documentation. |
+| `spec sc_init --name <name>` | Initialize a new feature specification. |
+| `spec sc_plan` | Progress the workflow state. |
+| `spec sc_approve` | Explicitly approve the current phase. |
+| `spec sc_analyze` | Perform a dedicated ambiguity analysis. |
+| `spec sc_guidance` | Get detailed behavioral instructions. |
+| `spec sc_feedback --feedback <text>` | Provide user feedback or answers. |
+| `spec sc_todo_list` | List implementation tasks. |
+| `spec sc_epoch --focus <text>` | Update short-term memory context. |
+| `spec sc_mode <mode>` | Toggle between 'one-shot' and 'step-through'. |
+| `spec sc_archive` | Manually archive the project. |
+| `spec sc_status` | Get a health check of the active project. |
+| `spec sc_verify` | Verify current state and check consistency. |
+| `spec sc_help` | Show help documentation. |
 
 ## Workflow Features
 

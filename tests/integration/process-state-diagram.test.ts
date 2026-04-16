@@ -59,6 +59,7 @@ describe('Workflow State Diagram Integration', () => {
 
     // Second call advances to Design
     await tools['sc_guidance'].callback({}, {});
+    await tools['sc_analyze'].callback({}, {});
     await tools['sc_approve'].callback({}, {});
     const planToDesign = await tools['sc_plan'].callback({}, {});
     expect(planToDesign.content[0].text).toContain(`Requirements complete. Scaffolding ${desFile}.`);
@@ -76,6 +77,7 @@ describe('Workflow State Diagram Integration', () => {
 
     // Second call advances to Tasks
     await tools['sc_guidance'].callback({}, {});
+    await tools['sc_analyze'].callback({}, {});
     await tools['sc_approve'].callback({}, {});
     const planToTasks = await tools['sc_plan'].callback({}, {});
     expect(planToTasks.content[0].text).toContain(`Design complete. Scaffolding ${tskFile}.`);
@@ -89,6 +91,7 @@ describe('Workflow State Diagram Integration', () => {
 
     // Approve tasks to move to Implementation
     await tools['sc_guidance'].callback({}, {});
+    await tools['sc_analyze'].callback({}, {});
     await tools['sc_approve'].callback({}, {});
 
     // Transition to Implementation phase
@@ -117,7 +120,7 @@ describe('Workflow State Diagram Integration', () => {
     const finalStatus = await tools['sc_status'].callback({ feature: featureName }, {});
     expect(finalStatus.content[0].text).toContain('Tasks: Completed');
     expect(finalStatus.content[0].text).toContain('Testing: Missing');
-    expect(finalStatus.content[0].text).toContain('✅ [COMPLETED] Implementation complete. Run `sc_plan` to scaffold testing.');
+    expect(finalStatus.content[0].text).toContain('✅ [COMPLETED] Implementation complete. Run `spec sc_plan` to scaffold testing.');
 
     const tasksContent = readFileSync(tasksPath, 'utf-8');
     expect(tasksContent).not.toContain('- [ ]');

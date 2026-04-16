@@ -104,7 +104,7 @@ describe('SpecManager', () => {
       expect(summary).toContain('Design: Missing');
       expect(summary).toContain('Tasks: Missing');
       expect(summary).toContain('🛑 STRICT MANDATE: You are in the Planning Phase');
-      expect(summary).toContain('Run `sc_init` to initialize requirements.');
+      expect(summary).toContain('Run `spec sc_init` to initialize requirements.');
     });
 
     it('should return pending edits if document contains <template-*> tags', () => {
@@ -133,7 +133,7 @@ describe('SpecManager', () => {
       expect(summary).toContain('Requirements: Reviewing');
       expect(summary).toContain('Design: Missing');
       expect(summary).toContain('🛑 STRICT MANDATE: You are in the Planning Phase');
-      expect(summary).toContain('🔍 [REVIEW] Requirements drafted. Run `sc_guidance` for review steps. Use `sc_approve` when ready.');
+      expect(summary).toContain('🔍 [REVIEW] Requirements drafted. **CRITICAL: You must now analyze for ambiguities before approval.** Run `spec sc_analyze` for analysis steps, then `spec sc_approve` when ready.');
     });
 
     it('should return one-shot specific instructions when mode is one-shot', () => {
@@ -148,7 +148,7 @@ describe('SpecManager', () => {
       const summary = SpecManager.getStatusSummary(tempDir, featureName);
       expect(summary).toContain('Requirements: Reviewing');
       expect(summary).toContain('🛑 STRICT MANDATE: You are in the Planning Phase');
-      expect(summary).toContain('🤖 [AUTONOMOUS REVIEW] Resolve ambiguities autonomously. Run `sc_guidance`. Once resolved, run `sc_plan` to scaffold the design phase.');
+      expect(summary).toContain('🤖 [AUTONOMOUS REVIEW] Resolve ambiguities autonomously. Run `spec sc_analyze` followed by `spec sc_guidance`. Once resolved, run `spec sc_plan` to scaffold the design phase.');
     });
     
     it('should handle full workflow Reviewing state', () => {
@@ -195,7 +195,7 @@ describe('SpecManager', () => {
       
       const summary = SpecManager.getStatusSummary(tempDir, featureName);
       expect(summary).toContain('Requirements: Drafted');
-      expect(summary).toContain('✅ [APPROVED] Run `sc_plan` to scaffold the design phase.');
+      expect(summary).toContain('✅ [APPROVED] Run `spec sc_plan` to scaffold the design phase.');
     });
 
     it('should include epoch context in status summary if file exists', () => {

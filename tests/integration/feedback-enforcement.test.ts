@@ -45,7 +45,7 @@ describe('Feedback Enforcement Integration', () => {
     // Attempt approve without guidance
     const approveRes = await tools['sc_approve'].callback({ feature: featureName }, {});
     expect(approveRes.isError).toBe(true);
-    expect(approveRes.content[0].text).toContain('You must run `sc_guidance` to review the requirements before advancing.');
+    expect(approveRes.content[0].text).toContain('You must run `spec sc_guidance` to review the requirements before advancing.');
 
     // Run guidance
     await tools['sc_guidance'].callback({ feature: featureName }, {});
@@ -53,7 +53,7 @@ describe('Feedback Enforcement Integration', () => {
     // Attempt approve without analyze
     const approveResA = await tools['sc_approve'].callback({ feature: featureName }, {});
     expect(approveResA.isError).toBe(true);
-    expect(approveResA.content[0].text).toContain('You must run `sc_analyze` to perform a self-critique for ambiguities');
+    expect(approveResA.content[0].text).toContain('You must run `spec sc_analyze` to perform a self-critique for ambiguities');
 
     // Run analyze
     const analyzeRes = await tools['sc_analyze'].callback({ feature: featureName }, {});
@@ -162,7 +162,7 @@ describe('Feedback Enforcement Integration', () => {
     // Attempt approve without analyze
     const approveRes = await tools['sc_approve'].callback({ feature: featureName }, {});
     expect(approveRes.isError).toBe(true);
-    expect(approveRes.content[0].text).toContain('You must run `sc_analyze` to perform a self-critique for ambiguities');
+    expect(approveRes.content[0].text).toContain('You must run `spec sc_analyze` to perform a self-critique for ambiguities');
 
     // Run analyze
     const analyzeRes = await tools['sc_analyze'].callback({ feature: featureName }, {});

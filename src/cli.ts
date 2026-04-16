@@ -77,7 +77,7 @@ async function main() {
 Initialize a new feature specification.
 
 Usage:
-  spec-cli exec init --name <name> [flags]
+  spec sc_init --name <name> [flags]
 
 Flags:
   --name <name>         Name of the feature (e.g., "user-auth").
@@ -90,7 +90,7 @@ Progress the workflow to the next state (e.g., Requirements -> Design).
 Scaffolds the next document based on the current state.
 
 Usage:
-  spec-cli exec plan [flags]
+  spec sc_plan [flags]
 
 Flags:
   --feature <name>      Target feature name.
@@ -99,10 +99,10 @@ Flags:
         } else if (topic === 'approve') {
           output = `
 Explicitly approve the current drafted phase.
-This is required in 'step-through' mode before calling 'sc_plan' to move to the next phase.
+This is required in 'step-through' mode before calling 'spec sc_plan' to move to the next phase.
 
 Usage:
-  spec-cli exec approve [flags]
+  spec sc_approve [flags]
 
 Flags:
   --feature <name>      Target feature name.
@@ -113,7 +113,7 @@ Get detailed behavioral instructions for the current state.
 Use this to understand the steps required for the "Ambiguity Resolution Loop".
 
 Usage:
-  spec-cli exec guidance [flags]
+  spec sc_guidance [flags]
 
 Flags:
   --feature <name>      Target feature name.
@@ -123,12 +123,9 @@ Flags:
 Manage implementation tasks.
 
 Usage:
-  spec-cli exec todo <action> [flags]
-
-Available Actions:
-  list                  Show all tasks and their completion status.
-  start --id <id>       Mark a task (e.g., "1.1") as actively being worked on.
-  complete --id <id>    Mark a task as finished.
+  spec sc_todo_list [flags]
+  spec sc_todo_start --id <id> [flags]
+  spec sc_todo_complete --id <id> [flags]
 
 Flags:
   --feature <name>      Target feature name.
@@ -140,7 +137,7 @@ Update context for short-term memory.
 Helps agents maintain continuity across sessions.
 
 Usage:
-  spec-cli exec epoch [flags]
+  spec sc_epoch [flags]
 
 Flags:
   --feature <name>      Target feature name.
@@ -154,7 +151,7 @@ Flags:
 Manually move the project to the completed directory.
 
 Usage:
-  spec-cli exec archive [flags]
+  spec sc_archive [flags]
 
 Flags:
   --feature <name>      Target feature name.
@@ -164,7 +161,7 @@ Flags:
 Toggle project mode between 'one-shot' and 'step-through'.
 
 Usage:
-  spec-cli exec mode <mode> [flags]
+  spec sc_mode <mode> [flags]
 
 Flags:
   --feature <name>      Target feature name.
@@ -175,19 +172,21 @@ Flags:
 Perform an action as part of the specification workflow.
 
 Usage:
-  spec-cli exec [command]
+  spec [command]
 
 Available Commands:
-  init          Initialize a new feature.
-  plan          Progress the workflow state.
-  approve       Approve the current drafted phase.
-  guidance      Get detailed behavioral instructions.
-  todo          Manage implementation tasks (list, start, complete).
-  epoch         Update short-term memory context.
-  archive       Manually archive the project.
-  mode          Toggle between 'one-shot' and 'step-through'.
+  sc_init          Initialize a new feature.
+  sc_plan          Progress the workflow state.
+  sc_approve       Approve the current drafted phase.
+  sc_guidance      Get detailed behavioral instructions.
+  sc_todo_list     List implementation tasks.
+  sc_todo_start    Start a task.
+  sc_todo_complete Complete a task.
+  sc_epoch         Update short-term memory context.
+  sc_archive       Manually archive the project.
+  sc_mode          Toggle between 'one-shot' and 'step-through'.
 
-Use "spec-cli help exec [command]" for more information about a command.
+Use "spec sc_help [command]" for more information about a command.
 `;
         }
       } else {
@@ -197,7 +196,7 @@ Use "spec-cli help exec [command]" for more information about a command.
 Get a health check of the active project and discover next steps.
 
 Usage:
-  spec-cli status [flags]
+  spec sc_status [flags]
 
 Flags:
   --feature <name>      Target feature name.
@@ -208,7 +207,7 @@ Verify current state and check consistency.
 A dedicated tool to validate that the last action worked.
 
 Usage:
-  spec-cli verify [flags]
+  spec sc_verify [flags]
 
 Flags:
   --feature <name>      Target feature name.
@@ -218,13 +217,20 @@ Flags:
 MCP server for managing spec workflow (requirements, design, implementation).
 
 Usage:
-  spec-cli [command]
+  spec [command]
 
 Available Commands:
-  status        Get a health check of the active project.
-  verify        Verify current state and check consistency.
-  exec          Perform a workflow action (init, plan, approve, etc.).
-  help          Help about any command.
+  sc_status        Get a health check of the active project.
+  sc_verify        Verify current state and check consistency.
+  sc_help          Help about any command.
+  sc_init          Initialize a new feature.
+  sc_plan          Progress the workflow state.
+  sc_approve       Approve the current drafted phase.
+  sc_guidance      Get detailed behavioral instructions.
+  sc_todo_*        Manage implementation tasks.
+  sc_epoch         Update short-term memory context.
+  sc_archive       Manually archive the project.
+  sc_mode          Toggle between 'one-shot' and 'step-through'.
 
 Flags:
   --feature <name>         Feature name context.
@@ -234,7 +240,7 @@ Flags:
   --id <id>                Task ID (for todo).
   --mode <mode>            'one-shot' or 'step-through'.
 
-Use "spec-cli help [command]" for more information about a command.
+Use "spec sc_help [command]" for more information about a command.
 `;
         }
       }
@@ -471,6 +477,9 @@ Use "spec-cli help [command]" for more information about a command.
         } else if (action === 'complete' && values.id) {
             const result = await completeTask({ path: featurePath, taskNumber: values.id });
             output = `${result.displayText}\n\n${SpecManager.getStatusSummary(baseDir, values.feature)}`;
+            console.log(output);
+        } else if (action === 'start' && values.id) {
+            output = `🚀 Task ${values.id} marked as IN PROGRESS.\n\n${SpecManager.getStatusSummary(baseDir, values.feature)}`;
             console.log(output);
         } else {
              output = `Action ${action} on id ${values.id} acknowledged.\n\n${SpecManager.getStatusSummary(baseDir, values.feature)}`;

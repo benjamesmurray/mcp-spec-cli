@@ -57,6 +57,7 @@ describe('Spec CLI Workflow Integration', () => {
 
     // 3.5. Approve requirements
     await tools['sc_guidance'].callback({}, {});
+    await tools['sc_analyze'].callback({}, {});
     const approveReqRes = await tools['sc_approve'].callback({}, {});
     expect(approveReqRes.content[0].text).toContain('Requirements Document" has been approved');
 
@@ -71,6 +72,7 @@ describe('Spec CLI Workflow Integration', () => {
 
     // 5.5. Approve design
     await tools['sc_guidance'].callback({}, {});
+    await tools['sc_analyze'].callback({}, {});
     const approveDesRes = await tools['sc_approve'].callback({}, {});
     expect(approveDesRes.content[0].text).toContain('Design Document" has been approved');
 
@@ -85,13 +87,14 @@ describe('Spec CLI Workflow Integration', () => {
 
     // 7.5. Approve tasks
     await tools['sc_guidance'].callback({}, {});
+    await tools['sc_analyze'].callback({}, {});
     const approveTskRes = await tools['sc_approve'].callback({}, {});
     expect(approveTskRes.content[0].text).toContain('Task List" has been approved');
 
     // 8. sc_status (everything ready)
     const statusRes = await tools['sc_status'].callback({}, {});
     expect(statusRes.content[0].text).toContain('Tasks: Active');
-    expect(statusRes.content[0].text).toContain('🚀 [IMPLEMENTATION] Proceed with tasks. Run `sc_todo_start` to begin.');
+    expect(statusRes.content[0].text).toContain('🚀 [IMPLEMENTATION] Proceed with tasks. Run `spec sc_todo_start` to begin.');
 
     // 9. todo (Complete a task)
     const todoRes = await tools['sc_todo_complete'].callback({ feature: featureName, id: '1.1' }, {});

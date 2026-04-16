@@ -78,6 +78,7 @@ describe('Epoch Context Integration', () => {
     
     // Approve requirements
     await tools['sc_guidance'].callback({ feature: featureName }, {});
+    await tools['sc_analyze'].callback({ feature: featureName }, {});
     await tools['sc_approve'].callback({ feature: featureName }, {});
     
     await tools['sc_plan'].callback({ feature: featureName }, {});
