@@ -247,6 +247,27 @@ export function registerSpecTools(server: McpServer): void {
   );
 
   server.registerTool(
+    'sc_feedback',
+    {
+      description: 'Provide user feedback or answers to open questions. This clears the associated open questions from the epoch context.',
+      inputSchema: {
+        feature: z.string().optional().describe('Feature name (optional)'),
+        feedback: z.string().describe('The user feedback or answers provided')
+      }
+    },
+    async (args) => {
+      try {
+        const cliArgs = ['exec', 'feedback', '--instruction', args.feedback];
+        if (args.feature) cliArgs.push('--feature', args.feature);
+        const result = await runCli(cliArgs);
+        return { content: [{ type: 'text', text: result }] };
+      } catch (error: any) {
+        return { content: [{ type: 'text', text: `Error: ${error.message}` }], isError: true };
+      }
+    }
+  );
+
+  server.registerTool(
     'sc_mode',
     {
       description: 'Toggle project mode between one-shot and step-through.',

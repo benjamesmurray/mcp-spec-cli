@@ -292,6 +292,25 @@ Use "spec-cli help [command]" for more information about a command.
         output = SpecManager.approve(baseDir, values.feature);
         console.log(output);
       }
+      else if (subcommand === 'feedback') {
+        const featurePath = SpecManager.resolveFeaturePath(baseDir, values.feature);
+        const feedback = values.instruction || '';
+        
+        // Update epoch context: Clear open questions since feedback was provided
+        const epochPath = join(featurePath, '.epoch-context.md');
+        if (existsSync(epochPath)) {
+            let epochContent = readFileSync(epochPath, 'utf-8');
+            epochContent = epochContent.replace(/## Open Questions \/ Uncertainties[\s\S]*?(?=##|$)/, `## Open Questions / Uncertainties\n*   None (Feedback received: ${feedback.slice(0, 50)}${feedback.length > 50 ? '...' : ''})\n\n`);
+            writeFileSync(epochPath, epochContent, 'utf-8');
+        }
+
+        // Set feedback marker to prevent immediate approval in the same turn
+        const feedbackMarker = join(featurePath, '.spec-last-feedback');
+        writeFileSync(feedbackMarker, new Date().toISOString(), 'utf-8');
+        
+        output = `Feedback acknowledged and recorded. Open questions have been cleared.\n\n${SpecManager.getStatusSummary(baseDir, values.feature)}`;
+        console.log(output);
+      }
       else if (subcommand === 'guidance') {
         output = SpecManager.getGuidance(baseDir, values.feature);
         console.log(output);

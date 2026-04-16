@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, writeFileSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync, rmSync } from 'fs';
 import { join, isAbsolute, basename, dirname, relative } from 'path';
 import { isDocumentEdited } from './documentAnalyzer.js';
 import { WorkflowStateRepository } from './workflowStateRepository.js';
@@ -289,17 +289,17 @@ Next Step: Run \`sc_init --name "your-feature"\` to start a new feature.`;
         phase = 'requirements';
         guidanceText = mode === 'one-shot' 
             ? '🚨 ONE-SHOT MODE ACTIVE: You are in the **Autonomous Ambiguity Resolution Loop**:\n1. Self-review the requirements for ambiguities or edge cases.\n2. Use `sc_epoch --openQuestions "..."` to record findings.\n3. Resolve all identified issues autonomously using your best judgment.\n4. Ensure all open questions are answered and closed.\nOnce all ambiguities are resolved autonomously, IMMEDIATELY run `sc_plan` to scaffold the design phase.\n\n### Self-Review Checklist:\n- Are all requirements clear and unambiguous?\n- Are edge cases considered?\n- Is the scope clearly defined?'
-            : 'You are in the **Ambiguity Resolution Loop**:\n1. Self-review for ambiguities/edge cases.\n2. Use `sc_epoch --openQuestions "..."` to record findings.\n3. Resolve what you can confidently.\n4. Ask the user targeted questions for the rest. If using a prompter tool, always include an "Other" or open-ended option; never restrict to strict Yes/No. 5. DO NOT ask for final approval until all questions are answered. Repeat this loop if answers raise new questions.\nOnce all ambiguities are resolved, ask the user for explicit approval. Once explicitly approved, run `sc_approve` to finalize.\n\n### Self-Review Checklist:\n- Are all requirements clear and unambiguous?\n- Are edge cases considered?\n- Is the scope clearly defined?';
+            : 'You are in the **Ambiguity Resolution Loop**:\n1. Self-review for ambiguities/edge cases.\n2. Use `sc_epoch --openQuestions "..."` to record findings.\n3. Resolve what you can confidently.\n4. Ask the user targeted questions for the rest. When the user provides answers, use `sc_feedback --feedback "..."` to record them and clear the open questions. DO NOT mistake information or answers for final approval. 5. DO NOT ask for final approval until all questions are answered and you have called `sc_feedback` for all responses. Repeat this loop if answers raise new questions.\nOnce all ambiguities are resolved AND you have recorded the feedback, ask the user for explicit approval (e.g., "Do the requirements look good?"). Once explicitly approved, run `sc_approve` to finalize.\n\n### Self-Review Checklist:\n- Are all requirements clear and unambiguous?\n- Are edge cases considered?\n- Is the scope clearly defined?';
     } else if (state.design.exists && state.design.edited && !state.design.approved) {
         phase = 'design';
         guidanceText = mode === 'one-shot'
             ? '🚨 ONE-SHOT MODE ACTIVE: You are in the **Autonomous Ambiguity Resolution Loop**:\n1. Self-review the design for technical ambiguities or missing details.\n2. Use `sc_epoch --openQuestions "..."` to record findings.\n3. Resolve all identified issues autonomously using your best judgment.\n4. Ensure all open questions are answered and closed.\nOnce all ambiguities are resolved autonomously, IMMEDIATELY run `sc_plan` to scaffold the tasks phase.\n\n### Self-Review Checklist:\n- Check for circular dependencies in Design.\n- Ensure all acceptance criteria have corresponding design elements.\n- Are data models clearly defined?'
-            : 'You are in the **Ambiguity Resolution Loop**:\n1. Self-review for technical ambiguities/missing details.\n2. Use `sc_epoch --openQuestions "..."` to record findings.\n3. Resolve what you can confidently.\n4. Ask the user targeted questions for the rest (always include an "Other" or open-ended option).\n5. DO NOT ask for final approval until all questions are answered. Repeat this loop if answers raise new questions.\nOnce all ambiguities are resolved, ask the user for explicit approval. Once explicitly approved, run `sc_approve` to finalize.\n\n### Self-Review Checklist:\n- Check for circular dependencies in Design.\n- Ensure all acceptance criteria have corresponding design elements.\n- Are data models clearly defined?';
+            : 'You are in the **Ambiguity Resolution Loop**:\n1. Self-review for technical ambiguities/missing details.\n2. Use `sc_epoch --openQuestions "..."` to record findings.\n3. Resolve what you can confidently.\n4. Ask the user targeted questions for the rest. When the user provides answers, use `sc_feedback --feedback "..."` to record them and clear the open questions. DO NOT mistake information or answers for final approval. 5. DO NOT ask for final approval until all questions are answered and you have called `sc_feedback` for all responses. Repeat this loop if answers raise new questions.\nOnce all ambiguities are resolved AND you have recorded the feedback, ask the user for explicit approval (e.g., "Does the design look good?"). Once explicitly approved, run `sc_approve` to finalize.\n\n### Self-Review Checklist:\n- Check for circular dependencies in Design.\n- Ensure all acceptance criteria have corresponding design elements.\n- Are data models clearly defined?';
     } else if (state.tasks.exists && state.tasks.edited && !state.tasks.approved) {
         phase = 'tasks';
         guidanceText = mode === 'one-shot'
             ? '🚨 ONE-SHOT MODE ACTIVE: You are in the **Autonomous Ambiguity Resolution Loop**:\n1. Self-review the task list for missing dependencies or unclear steps.\n2. Use `sc_epoch --openQuestions "..."` to record findings.\n3. Resolve all identified issues autonomously using your best judgment.\n4. Ensure the task plan is comprehensive and dependencies are correct.\nOnce verified, IMMEDIATELY run `sc_todo_start` to begin implementation.\n\n### Self-Review Checklist:\n- Ensure all acceptance criteria have corresponding tasks.\n- Are dependencies between tasks logically ordered?\n- Are task sizes appropriately granular?'
-            : 'You are in the **Ambiguity Resolution Loop**:\n1. Self-review for missing dependencies.\n2. Use `sc_epoch --openQuestions "..."` to record findings.\n3. Resolve what you can.\n4. Ask the user targeted questions (always include an "Other" or open-ended option).\n5. DO NOT ask for final approval until all questions are answered.\nOnce all questions are answered, ask for explicit approval. Once approved, run `sc_approve` to finalize.\n\n### Self-Review Checklist:\n- Ensure all acceptance criteria have corresponding tasks.\n- Are dependencies between tasks logically ordered?\n- Are task sizes appropriately granular?';
+            : 'You are in the **Ambiguity Resolution Loop**:\n1. Self-review for missing dependencies.\n2. Use `sc_epoch --openQuestions "..."` to record findings.\n3. Resolve what you can.\n4. Ask the user targeted questions. When the user provides answers, use `sc_feedback --feedback "..."` to record them and clear the open questions. DO NOT mistake information or answers for final approval. 5. DO NOT ask for final approval until all questions are answered and you have called `sc_feedback` for all responses.\nOnce all questions are answered AND you have recorded the feedback, ask for explicit approval (e.g., "Does the task plan look good?"). Once approved, run `sc_approve` to finalize.\n\n### Self-Review Checklist:\n- Ensure all acceptance criteria have corresponding tasks.\n- Are dependencies between tasks logically ordered?\n- Are task sizes appropriately granular?';
     } else if (state.testing.exists && state.testing.edited && !state.testing.approved) {
         phase = 'testing';
         guidanceText = mode === 'one-shot'
@@ -363,6 +363,17 @@ Next Step: Run \`sc_init --name "your-feature"\` to start a new feature.`;
     }
 
     this.validateTransition(featurePath, phase);
+
+    // Enforce delay after feedback to prevent misinterpretation of answers as approval in the same turn
+    const feedbackMarker = join(featurePath, '.spec-last-feedback');
+    if (existsSync(feedbackMarker)) {
+        const markerTime = new Date(readFileSync(feedbackMarker, 'utf-8')).getTime();
+        const now = Date.now();
+        if (now - markerTime < 2000) { // 2 seconds threshold
+            throw new Error('Approval blocked: Recent feedback was recorded. To prevent misinterpretation of information as approval, you must wait for a separate turn and explicit user approval before calling sc_approve.');
+        }
+        rmSync(feedbackMarker, { force: true });
+    }
 
     const approvedPath = join(featurePath, `.spec-${phase}-approved`);
     writeFileSync(approvedPath, new Date().toISOString(), 'utf-8');

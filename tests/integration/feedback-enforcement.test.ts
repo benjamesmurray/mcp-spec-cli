@@ -113,4 +113,32 @@ describe('Feedback Enforcement Integration', () => {
     const planRes3 = await tools['sc_plan'].callback({ feature: featureName }, {});
     expect(planRes3.content[0].text).toContain('Requirements complete. Scaffolding Design.md.');
   });
+
+  it('should prevent sc_approve immediately after sc_feedback', async () => {
+    const featureName = 'feedback-delay-test';
+    await tools['sc_init'].callback({ name: featureName }, {});
+    
+    const reqFile = WorkflowStateRepository.getStageFileName('requirements');
+    const featurePath = join(tempDir, 'projects', 'active', featureName);
+    writeFileSync(join(featurePath, reqFile), '# Requirements\nDone.', 'utf-8');
+
+    // Run guidance
+    await tools['sc_guidance'].callback({ feature: featureName }, {});
+
+    // Provide feedback
+    const feedbackRes = await tools['sc_feedback'].callback({ feature: featureName, feedback: 'Use blue for the logo.' }, {});
+    expect(feedbackRes.content[0].text).toContain('Feedback acknowledged and recorded');
+
+    // Attempt approve immediately
+    const approveRes = await tools['sc_approve'].callback({ feature: featureName }, {});
+    expect(approveRes.isError).toBe(true);
+    expect(approveRes.content[0].text).toContain('Approval blocked: Recent feedback was recorded');
+
+    // Wait 2.1 seconds
+    await new Promise(resolve => setTimeout(resolve, 2100));
+
+    // Now approve should work
+    const approveRes2 = await tools['sc_approve'].callback({ feature: featureName }, {});
+    expect(approveRes2.content[0].text).toContain('Requirements Document" has been approved');
+  }, 10000);
 });
