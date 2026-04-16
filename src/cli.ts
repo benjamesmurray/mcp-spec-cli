@@ -424,6 +424,9 @@ Use "spec-cli help [command]" for more information about a command.
                 message = 'Workflow is completely finished.';
                 const archiveResult = archiveProject(baseDir, values.feature);
                 message += `\n\n${archiveResult}`;
+                output = `${message}\n\n${SpecManager.getStatusSummary(baseDir)}`;
+                console.log(output);
+                return;
             }
         }
 
@@ -432,7 +435,7 @@ Use "spec-cli help [command]" for more information about a command.
       }
       else if (subcommand === 'archive') {
         const result = archiveProject(baseDir, values.feature);
-        output = `${result}\n\n${SpecManager.getStatusSummary(baseDir, values.feature)}`;
+        output = `${result}\n\n${SpecManager.getStatusSummary(baseDir)}`;
         console.log(output);
       }
       else if (subcommand === 'todo') {

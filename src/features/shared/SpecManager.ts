@@ -47,15 +47,31 @@ export class SpecManager {
       if (existsSync(join(rootDir, featureName))) {
         resolvedPath = join(rootDir, featureName);
       } else {
+        const nameOnly = basename(featureName);
         const commonDirs = [join('projects', 'active'), join('projects', 'completed'), 'active', 'completed', 'specs', 'docs'];
         let foundPath: string | null = null;
+        
+        // First try the original featureName in common dirs
         for (const dir of commonDirs) {
           if (existsSync(join(rootDir, dir, featureName))) {
             foundPath = join(rootDir, dir, featureName);
             break;
           }
         }
-        resolvedPath = foundPath || join(rootDir, 'projects', 'active', featureName);
+
+        // If not found, try the basename in common dirs
+        if (!foundPath && nameOnly !== featureName) {
+          for (const dir of commonDirs) {
+            if (existsSync(join(rootDir, dir, nameOnly))) {
+              foundPath = join(rootDir, dir, nameOnly);
+              break;
+            }
+          }
+        }
+
+        resolvedPath = foundPath || (featureName.startsWith('projects/') || featureName.startsWith('active/') || featureName.startsWith('completed/') 
+          ? join(rootDir, featureName) 
+          : join(rootDir, 'projects', 'active', featureName));
       }
 
       this.setLastUsed(baseDir, relative(baseDir, resolvedPath));
@@ -143,6 +159,10 @@ export class SpecManager {
       const featurePath = this.resolveFeaturePath(baseDir, featureName);
       const state = this.getWorkflowState(featurePath);
       const mode = this.getMode(featurePath);
+      const rootDir = this.findProjectRoot(baseDir);
+
+      const isArchived = featurePath.includes(join(rootDir, 'projects', 'completed')) || 
+                        featurePath.includes(join(rootDir, 'completed'));
 
       const formatStatus = (s: { exists: boolean, edited: boolean, approved: boolean }, label: string) => {
           if (!s.exists) return 'Missing';
@@ -167,9 +187,12 @@ export class SpecManager {
 
       let nextSteps = '';
       let phase = 'Specify';
-      let isPlanningPhase = true;
+      let isPlanningPhase = !isArchived;
 
-      if (!state.requirements.exists) {
+      if (isArchived) {
+          phase = 'Completed';
+          nextSteps = 'Feature workflow is complete. This project is archived.';
+      } else if (!state.requirements.exists) {
          phase = WorkflowStateRepository.getStageDisplayName('requirements');
          nextSteps = 'Run `sc_init` to initialize requirements.';
       } else if (!state.requirements.edited) {
