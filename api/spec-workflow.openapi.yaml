@@ -54,27 +54,31 @@ components:
       properties:
         type:
           type: string
-          enum: [sc_init, sc_refresh, init, check, skip, confirm, complete_task, update_epoch, approve, guidance]
+          enum: [sc_init, sc_refresh, init, check, skip, confirm, complete_task, update_epoch, approve, guidance, feedback]
           description: |
             Operation type to perform:
 
-            - **sc_init**: Initialize project workspace (usually not called directly - MCP will automatically guide model to use this when needed)
-            - **sc_refresh**: Force a refresh and synchronization of the internal workflow state machine after editing a document. Use this to verify action persistence.
+            - **sc_init**: Initialize project workspace
+            - **sc_refresh**: Force a refresh and synchronization
             - **init**: Initialize a new feature specification
             - **check**: Check current workflow status
             - **skip**: Skip current stage
-            - **confirm**: Confirm current stage completion (often followed by sc_plan to progress)
+            - **confirm**: Confirm current stage completion
             - **approve**: Explicitly approve the current drafted phase after review
-            - **guidance**: Get detailed behavioral instructions for the current state
+            - **guidance**: Get detailed behavioral instructions
             - **complete_task**: Mark task(s) as completed
             - **update_epoch**: Update the continuous task-epoch context
+            - **feedback**: Record user answers or feedback (clears open questions)
 
         introduction:
           type: string
           description: Feature introduction (required for init)
         language:
           type: string
-          description: User preferred language for documentation (required for sc_init)
+          description: User preferred language
+        feedback:
+          type: string
+          description: User feedback or answer (required for feedback)
         taskNumber:
           oneOf:
             - type: string
@@ -1118,11 +1122,11 @@ x-shared-resources:
         - Perform a thorough self-review of the requirements for ambiguities, edge cases, or missing details.
         - Use the sc_epoch tool to record open questions.
         - **Mode-Specific Resolution:**
-          - **In STEP-THROUGH mode:** Ask the user targeted questions to resolve ambiguities. When using a prompter tool (like ask_user), you MUST ALWAYS include an 'Other' or open-ended text option. DO NOT ask for final approval (e.g., "Do the requirements look good?") yet. If answers raise new questions, continue this loop.
+          - **In STEP-THROUGH mode:** Ask the user targeted questions to resolve ambiguities. When using a prompter tool (like ask_user), you MUST ALWAYS include an 'Other' or open-ended text option. **When the user provides answers, use the sc_feedback tool to record them.** This will clear the open questions. DO NOT mistake information or answers for final approval. DO NOT ask for final approval (e.g., "Do the requirements look good?") yet. If answers raise new questions, continue this loop.
           - **In ONE-SHOT mode:** Resolve all identified issues autonomously using your best judgment. Ensure all open questions recorded in sc_epoch are answered and closed. You DO NOT need to ask the user for approval.
         - Only when you have zero open questions should you proceed.
       - **Mode-Specific Progression:**
-        - **In STEP-THROUGH mode:** Only once all ambiguities are resolved, ask for final, explicit approval.
+        - **In STEP-THROUGH mode:** Only once all ambiguities are resolved AND you have recorded the feedback using sc_feedback, ask for final, explicit approval. **You must not call sc_approve in the same turn as sc_feedback.**
         - **In ONE-SHOT mode:** Once all ambiguities are resolved autonomously, IMMEDIATELY run `sc_plan` to scaffold the design phase.
       - The model MUST make modifications to the requirements document if the user requests changes or does not explicitly approve
       - The model MUST NOT call sc_plan to transition to the design phase until receiving clear approval (such as "yes", "approved", "looks good", etc.)
@@ -1169,11 +1173,11 @@ x-shared-resources:
         - Perform a thorough self-review of the design for technical ambiguities or missing details.
         - Use the sc_epoch tool to record open questions.
         - **Mode-Specific Resolution:**
-          - **In STEP-THROUGH mode:** Ask the user targeted questions to resolve ambiguities. When using a prompter tool (like ask_user), you MUST ALWAYS include an 'Other' or open-ended text option. DO NOT ask for final approval (e.g., "Does the design look good?") yet. If answers raise new questions, continue this loop.
+          - **In STEP-THROUGH mode:** Ask the user targeted questions to resolve ambiguities. When using a prompter tool (like ask_user), you MUST ALWAYS include an 'Other' or open-ended text option. **When the user provides answers, use the sc_feedback tool to record them.** This will clear the open questions. DO NOT mistake information or answers for final approval. DO NOT ask for final approval (e.g., "Does the design look good?") yet. If answers raise new questions, continue this loop.
           - **In ONE-SHOT mode:** Resolve all identified issues autonomously using your best judgment. Ensure all open questions recorded in sc_epoch are answered and closed. You DO NOT need to ask the user for approval.
         - Only when you have zero open questions should you proceed.
       - **Mode-Specific Progression:**
-        - **In STEP-THROUGH mode:** Only once all ambiguities are resolved, ask for final, explicit approval.
+        - **In STEP-THROUGH mode:** Only once all ambiguities are resolved AND you have recorded the feedback using sc_feedback, ask for final, explicit approval. **You must not call sc_approve in the same turn as sc_feedback.**
         - **In ONE-SHOT mode:** Once all ambiguities are resolved autonomously, IMMEDIATELY run `sc_plan` to scaffold the tasks phase.
       - The model MUST make modifications to the design document if the user requests changes or does not explicitly approve
       - The model MUST NOT call sc_plan to transition to the implementation plan until receiving clear approval (such as "yes", "approved", "looks good", etc.)
@@ -1247,11 +1251,11 @@ x-shared-resources:
         - Perform a thorough self-review of the task list for missing dependencies or unclear steps.
         - Use the sc_epoch tool to record open questions.
         - **Mode-Specific Resolution:**
-          - **In STEP-THROUGH mode:** Ask the user targeted questions to resolve ambiguities. When using a prompter tool (like ask_user), you MUST ALWAYS include an 'Other' or open-ended text option. DO NOT ask for final approval (e.g., "Do the tasks look good?") yet. If answers raise new questions, continue this loop.
+          - **In STEP-THROUGH mode:** Ask the user targeted questions to resolve ambiguities. When using a prompter tool (like ask_user), you MUST ALWAYS include an 'Other' or open-ended text option. **When the user provides answers, use the sc_feedback tool to record them.** This will clear the open questions. DO NOT mistake information or answers for final approval. DO NOT ask for final approval (e.g., "Do the tasks look good?") yet. If answers raise new questions, continue this loop.
           - **In ONE-SHOT mode:** Resolve all identified issues autonomously using your best judgment. Ensure all open questions recorded in sc_epoch are answered and closed. You DO NOT need to ask the user for approval.
         - Only when you have zero open questions should you proceed.
       - **Mode-Specific Progression:**
-        - **In STEP-THROUGH mode:** Only once all ambiguities are resolved, ask for final, explicit approval. After approval, stop and wait for the user to start the first task.
+        - **In STEP-THROUGH mode:** Only once all ambiguities are resolved AND you have recorded the feedback using sc_feedback, ask for final, explicit approval. **You must not call sc_approve in the same turn as sc_feedback.** After approval, stop and wait for the user to start the first task.
         - **In ONE-SHOT mode:** Once the task plan is complete and all ambiguities are resolved autonomously, IMMEDIATELY run `sc_todo_start --id <first_task_id>` to begin implementation.
       - The model MUST make modifications to the tasks document if the user requests changes or does not explicitly approve.
       - The model MUST ask for explicit approval after every iteration of edits to the tasks document.
