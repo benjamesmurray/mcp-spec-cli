@@ -129,9 +129,36 @@ describe('Workflow Improvements Integration', () => {
       // Wait 2.1 seconds
       await new Promise(resolve => setTimeout(resolve, 2100));
 
-      // Approval should now succeed
+      // Now approve should work
       const approveResSuccess = await tools['sc_approve'].callback({ feature: featureName }, {});
       expect(approveResSuccess.content[0].text).toContain('Requirements Document" has been approved');
-    }, 10000); // 10s timeout for the delay
-  });
+      }, 10000); // 10s timeout for the delay
+
+      describe('One-shot Mode Design', () => {
+      it('should skip explicit approval requirement in one-shot mode', async () => {
+        const featureName = 'oneshot-bypass-test';
+        // Init in one-shot mode
+        await tools['sc_init'].callback({ name: featureName, mode: 'one-shot' }, {});
+
+        const featurePath = join(tempDir, 'projects', 'active', featureName);
+        const reqFile = WorkflowStateRepository.getStageFileName('requirements');
+        const desFile = WorkflowStateRepository.getStageFileName('design');
+
+        writeFileSync(join(featurePath, reqFile), '# Requirements\nDone.', 'utf-8');
+
+        // Attempt sc_plan without sc_guidance/sc_analyze - should fail due to enforcement
+        const planResFail = await tools['sc_plan'].callback({ feature: featureName }, {});
+        expect(planResFail.content[0].text).toContain('You must run `sc_guidance`');
+
+        // Run guidance and analyze
+        await tools['sc_guidance'].callback({ feature: featureName }, {});
+        await tools['sc_analyze'].callback({ feature: featureName }, {});
+
+        // Now sc_plan should succeed IMMEDIATELY without sc_approve
+        const planResSuccess = await tools['sc_plan'].callback({ feature: featureName }, {});
+        expect(planResSuccess.content[0].text).toContain('Requirements complete. Scaffolding Design.md.');
+        expect(existsSync(join(featurePath, desFile))).toBe(true);
+      });
+      });
+      });
 });
