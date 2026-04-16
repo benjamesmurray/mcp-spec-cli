@@ -64,6 +64,11 @@ preview/
 
 # Temporary files
 .spec_last_used
+.spec-*-analyzed
+.spec-*-guidance
+.spec-*-approved
+.spec-last-feedback
+.spec-mode
 
 # Prompt files (migrated to OpenAPI)
 prompts/

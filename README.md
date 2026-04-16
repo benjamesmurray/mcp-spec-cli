@@ -14,7 +14,9 @@ The traditional approach to AI coding often leads to scope creep and forgotten r
 
 *   **State-Aware Autopilot:** The tool knows exactly what stage the project is in. The AI doesn't have to track whether it's doing "Requirements" or "Design"—it just calls `sc_plan` and the tool handles the transition automatically.
 *   **Ambiguity Resolution Loop:** Before asking for approval, the AI is instructed to perform a thorough self-review. It identifies uncertainties, resolves what it can independently, and asks targeted questions for the rest, ensuring a high-quality baseline before moving to the next phase.
-*   **Enforced Self-Review Checklists:** The `sc_guidance` tool now provides phase-specific self-review checklists (e.g., "Check for circular dependencies in Design," "Ensure all acceptance criteria have tasks"). The workflow now **mandates** that the AI calls `sc_guidance` and resolves all `openQuestions` in the epoch context before it can approve a phase or advance to the next one.
+*   **Mandatory Self-Critique:** The new `sc_analyze` tool provides a dedicated stage-specific critique prompt. The workflow now **mandates** that the AI calls `sc_analyze` to perform a thorough review for ambiguities, edge cases, and technical risks before it can seek user approval.
+*   **Enforced Self-Review Checklists:** The `sc_guidance` tool provides phase-specific self-review checklists (e.g., "Check for circular dependencies in Design," "Ensure all acceptance criteria have tasks"). The workflow now **mandates** that the AI calls `sc_guidance` and resolves all `openQuestions` in the epoch context before it can approve a phase.
+*   **Approval & Feedback Distinction:** The workflow includes an explicit `sc_feedback` tool for recording user answers and feedback. This automatically clears "open questions" and enforces a "cooling-off" period before `sc_approve` can be called, preventing the model from misinterpreting simple answers as final approval.
 *   **One-Shot vs. Step-Through Modes:** Users can toggle between **Step-Through** (the default "Ask -> Approve -> Confirm" cycle) and **One-Shot** mode. In One-Shot mode, the AI follows the same rigorous process as Step-Through (including mandatory guidance checks, ambiguity resolution, and detailed task documentation) but performs them fully autonomously. It resolves ambiguities using its best judgment and progresses through all phases—including executing automated tests and archiving the project—without stopping for human approval.
 *   **Lifecycle Directory Management:** Automatically organizes work into `projects/active/` and `projects/completed/`. Once a workflow is finalized (or manually archived), the tool moves the entire feature folder to the completed directory.
 *   **Automated Guidance Injection:** Automatically injects phase-specific engineering constraints (Requirements, Design, Tasks) directly into the workflow, ensuring the AI adheres to the specified rigour.
@@ -34,8 +36,10 @@ stateDiagram-v2
         [*] --> InitReq: sc_init
         InitReq --> EditReq: AI Drafts (Pending Edits)
         EditReq --> ReviewReq: Remove tags (Reviewing)
-        ReviewReq --> GuidanceReq: sc_guidance (Ambiguity Loop)
-        GuidanceReq --> ApproveReq: sc_approve
+        ReviewReq --> AnalyzeReq: sc_analyze (Critique)
+        AnalyzeReq --> GuidanceReq: sc_guidance (Ambiguity Loop)
+        GuidanceReq --> FeedbackReq: sc_feedback (Answers)
+        FeedbackReq --> ApproveReq: sc_approve
         ApproveReq --> [*]: sc_plan
     }
 
@@ -43,8 +47,10 @@ stateDiagram-v2
         [*] --> ScaffoldDes: Reset Epoch Context
         ScaffoldDes --> Research: AI Drafts (Pending Edits)
         Research --> ReviewDes: Remove tags (Reviewing)
-        ReviewDes --> GuidanceDes: sc_guidance (Ambiguity Loop)
-        GuidanceDes --> ApproveDes: sc_approve
+        ReviewDes --> AnalyzeDes: sc_analyze (Critique)
+        AnalyzeDes --> GuidanceDes: sc_guidance (Ambiguity Loop)
+        GuidanceDes --> FeedbackDes: sc_feedback (Answers)
+        FeedbackDes --> ApproveDes: sc_approve
         ApproveDes --> [*]: sc_plan
     }
 
@@ -52,8 +58,10 @@ stateDiagram-v2
         [*] --> ScaffoldTasks: Reset Epoch Context
         ScaffoldTasks --> RefreshTasks: AI Drafts (Pending Edits)
         RefreshTasks --> ReviewTsk: Remove tags (Reviewing)
-        ReviewTsk --> GuidanceTsk: sc_guidance (Ambiguity Loop)
-        GuidanceTsk --> ApproveTsk: sc_approve
+        ReviewTsk --> AnalyzeTsk: sc_analyze (Critique)
+        AnalyzeTsk --> GuidanceTsk: sc_guidance (Ambiguity Loop)
+        GuidanceTsk --> FeedbackTsk: sc_feedback (Answers)
+        FeedbackTsk --> ApproveTsk: sc_approve
         ApproveTsk --> [*]: sc_plan
     }
 
@@ -92,7 +100,9 @@ Spec CLI provides a suite of surgical MCP tools to guide the AI agent through th
 | `sc_init` | Initialize a new feature specification in `projects/active/`. | `{"name": "auth-system", "mode": "one-shot"}` |
 | `sc_plan` | Progress the workflow state. Automatically archives when finished. | `{"instruction": "Use PostgreSQL"}` |
 | `sc_approve` | Explicitly approve the current drafted phase after review. | `{}` |
+| `sc_analyze` | Perform a dedicated ambiguity analysis and self-critique. | `{}` |
 | `sc_guidance` | Get detailed behavioral instructions for the current state. | `{}` |
+| `sc_feedback` | Provide user feedback or answers to open questions. | `{"feedback": "The logo should be blue"}` |
 | `sc_status` | Get a health check of the active project and snappy next steps. | `{"feature": "auth-system"}` |
 | `sc_todo_list` | List all implementation tasks and their status. | `{}` |
 | `sc_todo_start` | Mark a specific task as being actively worked on. | `{"id": "1.1"}` |
@@ -113,7 +123,9 @@ While primarily used via MCP, Spec CLI also provides a powerful standalone inter
 | `spec-cli exec init --name <name>` | Initialize a new feature specification. |
 | `spec-cli exec plan` | Progress the workflow state. |
 | `spec-cli exec approve` | Explicitly approve the current phase. |
+| `spec-cli exec analyze` | Perform a dedicated ambiguity analysis. |
 | `spec-cli exec guidance` | Get detailed behavioral instructions. |
+| `spec-cli exec feedback --instruction <text>` | Provide user feedback or answers. |
 | `spec-cli exec todo list` | List implementation tasks. |
 | `spec-cli exec epoch --focus <text>` | Update short-term memory context. |
 | `spec-cli exec mode <mode>` | Toggle between 'one-shot' and 'step-through'. |
