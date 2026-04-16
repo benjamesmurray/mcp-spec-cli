@@ -292,6 +292,10 @@ Use "spec-cli help [command]" for more information about a command.
         output = SpecManager.approve(baseDir, values.feature);
         console.log(output);
       }
+      else if (subcommand === 'analyze') {
+        output = SpecManager.analyze(baseDir, values.feature);
+        console.log(output);
+      }
       else if (subcommand === 'feedback') {
         const featurePath = SpecManager.resolveFeaturePath(baseDir, values.feature);
         const feedback = values.instruction || '';

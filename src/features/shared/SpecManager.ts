@@ -201,8 +201,8 @@ export class SpecManager {
       } else if (!state.requirements.approved) {
          phase = WorkflowStateRepository.getStageDisplayName('requirements');
          nextSteps = mode === 'one-shot' 
-            ? '🤖 [AUTONOMOUS REVIEW] Resolve ambiguities autonomously. Run `sc_guidance`. Once resolved, run `sc_plan` to scaffold the design phase.'
-            : '🔍 [REVIEW] Requirements drafted. Run `sc_guidance` for review steps. Use `sc_approve` when ready.';
+            ? '🤖 [AUTONOMOUS REVIEW] Resolve ambiguities autonomously. Run `sc_analyze` followed by `sc_guidance`. Once resolved, run `sc_plan` to scaffold the design phase.'
+            : '🔍 [REVIEW] Requirements drafted. **CRITICAL: You must now analyze for ambiguities before approval.** Run `sc_analyze` for analysis steps, then `sc_approve` when ready.';
       } else if (!state.design.exists) {
          phase = WorkflowStateRepository.getStageDisplayName('requirements');
          nextSteps = '✅ [APPROVED] Run `sc_plan` to scaffold the design phase.';
@@ -212,8 +212,8 @@ export class SpecManager {
       } else if (!state.design.approved) {
          phase = WorkflowStateRepository.getStageDisplayName('design');
          nextSteps = mode === 'one-shot'
-            ? '🤖 [AUTONOMOUS REVIEW] Resolve technical ambiguities autonomously. Run `sc_guidance`. Once resolved, run `sc_plan` to scaffold the tasks phase.'
-            : '🔍 [REVIEW] Design drafted. Run `sc_guidance` for review steps. Use `sc_approve` when ready.';
+            ? '🤖 [AUTONOMOUS REVIEW] Resolve technical ambiguities autonomously. Run `sc_analyze` followed by `sc_guidance`. Once resolved, run `sc_plan` to scaffold the tasks phase.'
+            : '🔍 [REVIEW] Design drafted. **CRITICAL: You must now analyze for technical ambiguities before approval.** Run `sc_analyze` for analysis steps, then `sc_approve` when ready.';
       } else if (!state.tasks.exists) {
          phase = WorkflowStateRepository.getStageDisplayName('design');
          nextSteps = '✅ [APPROVED] Run `sc_plan` to scaffold the tasks phase.';
@@ -223,8 +223,8 @@ export class SpecManager {
       } else if (!state.tasks.approved) {
          phase = WorkflowStateRepository.getStageDisplayName('tasks');
          nextSteps = mode === 'one-shot'
-            ? '🤖 [AUTONOMOUS REVIEW] Verify task plan autonomously. Run `sc_guidance`. Once verified, run `sc_todo_start` to begin.'
-            : '🔍 [REVIEW] Tasks drafted. Run `sc_guidance` for review steps. Use `sc_approve` when ready.';
+            ? '🤖 [AUTONOMOUS REVIEW] Verify task plan autonomously. Run `sc_analyze` followed by `sc_guidance`. Once verified, run `sc_todo_start` to begin.'
+            : '🔍 [REVIEW] Tasks drafted. **CRITICAL: You must now analyze for planning ambiguities before approval.** Run `sc_analyze` for analysis steps, then `sc_approve` when ready.';
       } else if (!allTasksComplete) {
          isPlanningPhase = false;
          phase = 'Implementation';
@@ -315,14 +315,81 @@ Next Step: Run \`sc_init --name "your-feature"\` to start a new feature.`;
 
     return 'No specific behavioral guidance for the current state. Follow the snappy "Next Step" in `sc_status`.';
   }
+/**
+ * Performs an ambiguity analysis and self-critique.
+ */
+static analyze(baseDir: string, featureName?: string): string {
+  const featurePath = this.resolveFeaturePath(baseDir, featureName);
+  const state = this.getWorkflowState(featurePath);
+  const mode = this.getMode(featurePath);
 
-  /**
-   * Validates that the current phase is ready to be approved or advanced.
+  let phase = '';
+  let analysisPrompt = '';
+
+  if (state.requirements.exists && state.requirements.edited && !state.requirements.approved) {
+      phase = 'requirements';
+      analysisPrompt = `### [Self-Critique] Requirements Analysis
+Please perform a thorough analysis of the drafted Requirements document for:
+1. **Ambiguities**: Are any requirements open to multiple interpretations?
+2. **Edge Cases**: Are error conditions, limit cases, and rare scenarios covered?
+3. **Missing Details**: Are there any gaps in the user stories or acceptance criteria?
+4. **Consistency**: Do any requirements contradict each other?
+
+**Action**: Use \`sc_epoch --openQuestions "..."\` to record at least 2-3 specific findings or questions for the user. DO NOT ask for approval until these are resolved.`;
+  } else if (state.design.exists && state.design.edited && !state.design.approved) {
+      phase = 'design';
+      analysisPrompt = `### [Self-Critique] Design Analysis
+Please perform a technical analysis of the drafted Design document for:
+1. **Completeness**: Does the design cover every requirement and acceptance criterion?
+2. **Technical Risks**: Are there any unproven technologies or potential bottlenecks?
+3. **Data Integrity**: Are data models clearly defined with proper relationships?
+4. **Error Resilience**: Is the error handling strategy comprehensive for this architecture?
+
+**Action**: Use \`sc_epoch --openQuestions "..."\` to record at least 2-3 specific technical uncertainties. DO NOT ask for approval until these are resolved.`;
+  } else if (state.tasks.exists && state.tasks.edited && !state.tasks.approved) {
+      phase = 'tasks';
+      analysisPrompt = `### [Self-Critique] Task Plan Analysis
+Please perform a detailed review of the Implementation Plan for:
+1. **Granularity**: Are tasks small enough to be completed in one turn?
+2. **Dependencies**: Is the execution order logically sound?
+3. **Integration**: Is there a clear plan for wiring components together?
+4. **Testability**: Does each task have clear acceptance criteria and testing steps?
+
+**Action**: Use \`sc_epoch --openQuestions "..."\` to record any missing steps or dependency risks. DO NOT ask for approval until the plan is airtight.`;
+  } else if (state.testing.exists && state.testing.edited && !state.testing.approved) {
+      phase = 'testing';
+      analysisPrompt = `### [Self-Critique] Testing Plan Analysis
+Please perform a review of the Testing & Verification Plan for:
+1. **Coverage**: Are all requirements and design elements covered by tests?
+2. **Reproducibility**: Are manual steps clear and unambiguous?
+3. **Edge Case Verification**: Are the identified edge cases specifically tested?
+4. **Automation**: Is the balance between automated and manual testing appropriate?
+
+**Action**: Use \`sc_epoch --openQuestions "..."\` to record any gaps in verification logic.`;
+  }
+
+  if (phase) {
+      const markerPath = join(featurePath, `.spec-${phase}-analyzed`);
+      writeFileSync(markerPath, new Date().toISOString(), 'utf-8');
+      return analysisPrompt;
+  }
+
+  return 'Analysis is only available when a document is drafted and awaiting review. Use `sc_status` to check the current state.';
+}
+
+/**
+ * Validates that the current phase is ready to be approved or advanced.
+...
    */
   static validateTransition(featurePath: string, phase: string): void {
     const guidancePath = join(featurePath, `.spec-${phase}-guidance`);
     if (!existsSync(guidancePath)) {
         throw new Error(`You must run \`sc_guidance\` to review the ${phase} before advancing.`);
+    }
+
+    const analyzePath = join(featurePath, `.spec-${phase}-analyzed`);
+    if (!existsSync(analyzePath)) {
+        throw new Error(`You must run \`sc_analyze\` to perform a self-critique for ambiguities in the ${phase} before advancing.`);
     }
 
     const epochPath = join(featurePath, '.epoch-context.md');
