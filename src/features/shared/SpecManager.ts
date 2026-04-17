@@ -40,7 +40,7 @@ export class SpecManager {
       // If we are already inside the feature directory, return baseDir
       if (basename(baseDir) === featureName) {
         resolvedPath = baseDir;
-        this.setLastUsed(baseDir, relative(baseDir, resolvedPath) || '.');
+        this.setLastUsed(rootDir, relative(rootDir, resolvedPath) || '.');
         return resolvedPath;
       }
 
@@ -74,14 +74,14 @@ export class SpecManager {
           : join(rootDir, 'projects', 'active', featureName));
       }
 
-      this.setLastUsed(baseDir, relative(baseDir, resolvedPath));
+      this.setLastUsed(rootDir, relative(rootDir, resolvedPath));
       return resolvedPath;
     }
 
-    const lastUsedPath = join(baseDir, this.LAST_USED_FILE);
+    const lastUsedPath = join(rootDir, this.LAST_USED_FILE);
     if (existsSync(lastUsedPath)) {
       const lastUsed = readFileSync(lastUsedPath, 'utf-8').trim();
-      const fullPath = join(baseDir, lastUsed);
+      const fullPath = join(rootDir, lastUsed);
       if (existsSync(fullPath)) {
         return fullPath;
       }
@@ -90,14 +90,14 @@ export class SpecManager {
     throw new Error('Could not determine project context. Please provide a feature name (e.g. {"feature": "auth"}).');
   }
 
-  private static setLastUsed(baseDir: string, featurePathRelative: string): void {
-    writeFileSync(join(baseDir, this.LAST_USED_FILE), featurePathRelative, 'utf-8');
+  private static setLastUsed(rootDir: string, featurePathRelative: string): void {
+    writeFileSync(join(rootDir, this.LAST_USED_FILE), featurePathRelative, 'utf-8');
   }
 
   /**
    * Finds the project root by searching upwards for marker files.
    */
-  private static findProjectRoot(startDir: string): string {
+  public static findProjectRoot(startDir: string): string {
     let current = startDir;
     while (current !== dirname(current)) {
       if (existsSync(join(current, 'package.json')) || existsSync(join(current, '.git')) || existsSync(join(current, '.spec_root'))) {

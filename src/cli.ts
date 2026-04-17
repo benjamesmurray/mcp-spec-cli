@@ -32,8 +32,9 @@ const command = positionals[0];
 const subcommand = positionals[1];
 
 function archiveProject(baseDir: string, featureName?: string): string {
+  const rootDir = SpecManager.findProjectRoot(baseDir);
   const currentPath = SpecManager.resolveFeaturePath(baseDir, featureName);
-  const targetDir = join(baseDir, 'projects', 'completed');
+  const targetDir = join(rootDir, 'projects', 'completed');
   
   if (currentPath.includes(targetDir)) {
     return 'Project is already in the completed directory.';
@@ -59,7 +60,7 @@ function archiveProject(baseDir: string, featureName?: string): string {
   }
 
   // Update .spec_last_used with new relative path
-  writeFileSync(join(baseDir, '.spec_last_used'), join('projects', 'completed', featureDirName), 'utf-8');
+  writeFileSync(join(rootDir, '.spec_last_used'), join('projects', 'completed', featureDirName), 'utf-8');
   return `Successfully archived project to ${join('projects', 'completed', featureDirName)}.`;
 }
 
