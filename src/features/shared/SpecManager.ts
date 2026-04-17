@@ -250,7 +250,7 @@ export class SpecManager {
       }
 
       if (isPlanningPhase) {
-          nextSteps = `🛑 STRICT MANDATE: You are in the Planning Phase. You MUST NOT write source code. Use spec sc_plan only after approval.\n\n${nextSteps}`;
+          nextSteps = `🛑 STRICT MANDATE: You are in the Planning Phase. You MUST NOT write source code. Use \`spec sc_plan\` only after approval.\n\n${nextSteps}`;
       }
 
       let epochInfo = '';
@@ -437,7 +437,7 @@ Please perform a review of the Testing & Verification Plan for:
         const markerTime = new Date(readFileSync(feedbackMarker, 'utf-8')).getTime();
         const now = Date.now();
         if (now - markerTime < 2000) { // 2 seconds threshold
-            throw new Error('Approval blocked: Recent feedback was recorded. To prevent misinterpretation of information as approval, you must wait for a separate turn and explicit user approval before calling sc_approve.');
+            throw new Error('Approval blocked: Recent feedback was recorded. To prevent misinterpretation of information as approval, you must wait for a separate turn and explicit user approval before calling spec sc_approve.');
         }
         rmSync(feedbackMarker, { force: true });
     }

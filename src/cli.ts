@@ -175,16 +175,16 @@ Usage:
   spec [command]
 
 Available Commands:
-  sc_init          Initialize a new feature.
-  sc_plan          Progress the workflow state.
-  sc_approve       Approve the current drafted phase.
-  sc_guidance      Get detailed behavioral instructions.
-  sc_todo_list     List implementation tasks.
-  sc_todo_start    Start a task.
-  sc_todo_complete Complete a task.
-  sc_epoch         Update short-term memory context.
-  sc_archive       Manually archive the project.
-  sc_mode          Toggle between 'one-shot' and 'step-through'.
+  spec sc_init          Initialize a new feature.
+  spec sc_plan          Progress the workflow state.
+  spec sc_approve       Approve the current drafted phase.
+  spec sc_guidance      Get detailed behavioral instructions.
+  spec sc_todo_list     List implementation tasks.
+  spec sc_todo_start    Start a task.
+  spec sc_todo_complete Complete a task.
+  spec sc_epoch         Update short-term memory context.
+  spec sc_archive       Manually archive the project.
+  spec sc_mode          Toggle between 'one-shot' and 'step-through'.
 
 Use "spec sc_help [command]" for more information about a command.
 `;
@@ -220,17 +220,17 @@ Usage:
   spec [command]
 
 Available Commands:
-  sc_status        Get a health check of the active project.
-  sc_verify        Verify current state and check consistency.
-  sc_help          Help about any command.
-  sc_init          Initialize a new feature.
-  sc_plan          Progress the workflow state.
-  sc_approve       Approve the current drafted phase.
-  sc_guidance      Get detailed behavioral instructions.
-  sc_todo_*        Manage implementation tasks.
-  sc_epoch         Update short-term memory context.
-  sc_archive       Manually archive the project.
-  sc_mode          Toggle between 'one-shot' and 'step-through'.
+  spec sc_status        Get a health check of the active project.
+  spec sc_verify        Verify current state and check consistency.
+  spec sc_help          Help about any command.
+  spec sc_init          Initialize a new feature.
+  spec sc_plan          Progress the workflow state.
+  spec sc_approve       Approve the current drafted phase.
+  spec sc_guidance      Get detailed behavioral instructions.
+  spec sc_todo_*        Manage implementation tasks.
+  spec sc_epoch         Update short-term memory context.
+  spec sc_archive       Manually archive the project.
+  spec sc_mode          Toggle between 'one-shot' and 'step-through'.
 
 Flags:
   --feature <name>         Feature name context.
@@ -344,7 +344,7 @@ Use "spec sc_help [command]" for more information about a command.
             message = `Please finish editing ${WorkflowStateRepository.getStageFileName('requirements')} (remove all <template> tags) before advancing.`;
             if (values.instruction) message += `\n> Reminder instruction: ${values.instruction}`;
         } else if (!state.requirements.approved && mode !== 'one-shot') {
-            message = `Requirements drafted but not yet approved. Please run \`sc_guidance\` for review instructions, then \`sc_approve\` before advancing.`;
+            message = `Requirements drafted but not yet approved. Please run \`spec sc_guidance\` for review instructions, then \`spec sc_approve\` before advancing.`;
             if (values.instruction) message += `\n> Reminder instruction: ${values.instruction}`;
         } else if (!state.design.exists) {
             if (mode === 'one-shot') {
@@ -369,7 +369,7 @@ Use "spec sc_help [command]" for more information about a command.
             message = `Please finish editing ${WorkflowStateRepository.getStageFileName('design')} (remove all <template> tags) before advancing.`;
             if (values.instruction) message += `\n> Reminder instruction: ${values.instruction}`;
         } else if (!state.design.approved && mode !== 'one-shot') {
-            message = `Design drafted but not yet approved. Please run \`sc_guidance\` for review instructions, then \`sc_approve\` before advancing.`;
+            message = `Design drafted but not yet approved. Please run \`spec sc_guidance\` for review instructions, then \`spec sc_approve\` before advancing.`;
             if (values.instruction) message += `\n> Reminder instruction: ${values.instruction}`;
         } else if (!state.tasks.exists) {
             if (mode === 'one-shot') {
@@ -394,7 +394,7 @@ Use "spec sc_help [command]" for more information about a command.
             message = `Please finish editing ${WorkflowStateRepository.getStageFileName('tasks')} (remove all <template> tags) before advancing.`;
             if (values.instruction) message += `\n> Reminder instruction: ${values.instruction}`;
         } else if (!state.tasks.approved && mode !== 'one-shot') {
-            message = `Tasks drafted but not yet approved. Please run \`sc_guidance\` for review instructions, then \`sc_approve\` before advancing.`;
+            message = `Tasks drafted but not yet approved. Please run \`spec sc_guidance\` for review instructions, then \`spec sc_approve\` before advancing.`;
             if (values.instruction) message += `\n> Reminder instruction: ${values.instruction}`;
         } else {
             // Check if all tasks are complete
@@ -438,7 +438,7 @@ Use "spec sc_help [command]" for more information about a command.
                 }
                 if (values.instruction) message += `\n> Reminder instruction: ${values.instruction}`;
             } else if (!state.testing.approved && mode !== 'one-shot') {
-                message = `Testing plan drafted but not yet approved. Please run \`sc_guidance\` for review instructions, then \`sc_approve\` before advancing.`;
+                message = `Testing plan drafted but not yet approved. Please run \`spec sc_guidance\` for review instructions, then \`spec sc_approve\` before advancing.`;
                 if (values.instruction) message += `\n> Reminder instruction: ${values.instruction}`;
             } else {
                 if (mode === 'one-shot') {
